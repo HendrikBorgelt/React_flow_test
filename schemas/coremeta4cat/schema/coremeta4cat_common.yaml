@@ -1,0 +1,396 @@
+---
+id: https://w3id.org/nfdi4cat/coremeta4cat/common/
+name: coremeta4cat-common
+title: CoreMeta4cat Common — Shared Slots and Enumerations
+description: |-
+  Shared infrastructure for all CoreMeta4cat subprofiles.
+
+  This module provides:
+  - Shared slots reused across two or more CoreMeta4cat subprofiles
+    (atmosphere, temperature, equipment, calcination parameters, …)
+  - Domain-level enumerations (CatalysisResearchFieldEnum, SampleStateEnum, …)
+
+  Design note: This module intentionally does NOT define a CoreMeta4catEntity root
+  class. Following the DCAT-AP-PLUS design patterns, the catalysis domain is
+  expressed at the dcat:Dataset level via rdf_type (ClassifierMixin, Pattern 3)
+  using voc4cat terms. The four CoreMeta4cat pillars — Synthesis, Characterization,
+  Reaction, Simulation — are modelled as DCAT-AP-PLUS Activity subclasses in
+  their respective subprofile modules, not as subclasses of a shared root.
+
+  Import hierarchy:
+    coremeta4cat_common.yaml  (this file)
+      +-- chem_dcat_ap   (chemistry layer)
+            +-- chemical_reaction_ap
+                  +-- chemical_entities_ap
+                        +-- material_entities_ap
+                              +-- dcat_ap_plus  (DCAT-AP-PLUS base)
+
+license: CC-BY-4.0
+version: 1.0.0
+
+prefixes:
+  coremeta4cat: https://w3id.org/nfdi4cat/coremeta4cat/
+  VOC4CAT: https://w3id.org/nfdi4cat/voc4cat_
+  chemdcatap: https://nfdi-de.github.io/chem-dcat-ap/
+  dcatapplus: https://w3id.org/nfdi-de/dcat-ap-plus/
+  linkml: https://w3id.org/linkml/
+  dcterms: http://purl.org/dc/terms/
+  prov: http://www.w3.org/ns/prov#
+  rdf: http://www.w3.org/1999/02/22-rdf-syntax-ns#
+  owl: http://www.w3.org/2002/07/owl#
+  OBI: http://purl.obolibrary.org/obo/OBI_
+  NCIT: http://purl.obolibrary.org/obo/NCIT_
+  SIO: http://semanticscience.org/resource/SIO_
+  AFR: http://purl.allotrope.org/ontologies/result#AFR_
+  AFP: http://purl.allotrope.org/ontologies/process#AFP_
+
+default_prefix: coremeta4cat
+default_range: string
+
+imports:
+  - linkml:types
+  - dcat_4c_ap
+
+# ==================== SHARED SLOTS ====================
+#
+# A slot is placed here when it is referenced by two or more CoreMeta4cat subprofiles.
+# Slots exclusive to one subprofile are declared in that subprofile file.
+
+slots:
+
+  # ---- Process / environment conditions ----
+  # Used across: Synthesis, Characterization, Reaction
+
+  atmosphere:
+    description: Gaseous environment or atmospheric conditions during a process.
+    range: string
+    slot_uri: coremeta4cat:atmosphere
+    multivalued: true
+
+  temperature:
+    description: Temperature during a process or measurement.
+    range: float
+    slot_uri: AFR:0001584
+    multivalued: true
+    unit:
+      ucum_code: Cel
+
+  equipment:
+    description: Equipment or instrument used in a process.
+    range: string
+    slot_uri: VOC4CAT:0000187
+    multivalued: true
+
+  flow_rate:
+    description: Flow rate of a fluid or gas.
+    range: float
+    slot_uri: coremeta4cat:flow_rate
+    multivalued: true
+    unit:
+      ucum_code: mL/min
+
+  heating_rate:
+    description: Rate at which temperature is increased during a process.
+    range: float
+    slot_uri: coremeta4cat:heating_rate
+    multivalued: true
+    unit:
+      ucum_code: Cel/min
+
+  heating_procedure:
+    description: Description of the heating procedure applied.
+    range: string
+    slot_uri: coremeta4cat:heating_procedure
+    multivalued: true
+
+  number_of_cycles:
+    description: Number of repeated cycles in a process (e.g. ALD cycles, impregnation cycles).
+    range: integer
+    slot_uri: coremeta4cat:number_of_cycles
+    multivalued: true
+
+  sample_mass:
+    description: Mass of the sample used in a process or measurement.
+    range: float
+    slot_uri: coremeta4cat:sample_mass
+    multivalued: true
+    unit:
+      ucum_code: mg
+
+  sample_pretreatment:
+    description: Pre-treatment applied to the sample before a process or measurement.
+    range: string
+    slot_uri: VOC4CAT:0000122
+    multivalued: true
+
+  stirring_speed:
+    description: Rotational speed of stirring or agitation.
+    range: float
+    slot_uri: coremeta4cat:stirring_speed
+    multivalued: true
+    unit:
+      ucum_code: rpm
+
+  stirring_duration:
+    description: Duration of stirring or agitation.
+    range: float
+    slot_uri: coremeta4cat:stirring_duration
+    multivalued: true
+    unit:
+      ucum_code: h
+
+  vessel_type:
+    description: Type of reaction or synthesis vessel used.
+    range: string
+    slot_uri: coremeta4cat:vessel_type
+    multivalued: true
+
+  carrier_gas:
+    description: Carrier gas used in a process (e.g. in GC analysis or ALD deposition).
+    range: string
+    slot_uri: coremeta4cat:carrier_gas
+    multivalued: true
+
+  dispersant:
+    description: Dispersant used (e.g. in DLS measurement or flame spray pyrolysis).
+    range: string
+    slot_uri: coremeta4cat:dispersant
+    multivalued: true
+
+  # ---- Drying and calcination parameters ----
+  # Used across multiple Synthesis preparation methods
+
+  drying_device:
+    description: Device used for drying (e.g. oven, rotary evaporator).
+    range: string
+    slot_uri: coremeta4cat:drying_device
+    multivalued: true
+
+  drying_temperature:
+    description: Temperature applied during drying.
+    range: float
+    slot_uri: coremeta4cat:drying_temperature
+    multivalued: true
+    unit:
+      ucum_code: Cel
+
+  drying_time:
+    description: Duration of the drying step.
+    range: float
+    slot_uri: coremeta4cat:drying_time
+    multivalued: true
+    unit:
+      ucum_code: h
+
+  drying_atmosphere:
+    description: Atmosphere maintained during drying (e.g. air, N2).
+    range: string
+    slot_uri: coremeta4cat:drying_atmosphere
+    multivalued: true
+
+  calcination_initial_temperature:
+    description: Initial temperature for calcination.
+    range: float
+    slot_uri: VOC4CAT:0000057
+    multivalued: true
+    unit:
+      ucum_code: Cel
+
+  calcination_final_temperature:
+    description: Final (target) temperature for calcination.
+    range: float
+    slot_uri: VOC4CAT:0000058
+    multivalued: true
+    unit:
+      ucum_code: Cel
+
+  calcination_dwelling_time:
+    description: Time held at the final calcination temperature.
+    range: float
+    slot_uri: VOC4CAT:0000060
+    multivalued: true
+    unit:
+      ucum_code: h
+
+  calcination_gaseous_environment:
+    description: Gaseous environment maintained during calcination (e.g. air, H2/N2).
+    range: string
+    slot_uri: VOC4CAT:0000055
+    multivalued: true
+
+  calcination_heating_rate:
+    description: Heating rate during calcination.
+    range: float
+    slot_uri: VOC4CAT:0000059
+    multivalued: true
+    unit:
+      ucum_code: Cel/min
+
+  calcination_gas_flow_rate:
+    description: Gas flow rate maintained during calcination.
+    range: float
+    slot_uri: VOC4CAT:0000056
+    multivalued: true
+    unit:
+      ucum_code: mL/min
+
+  # ---- Measurement / analytical slots ----
+  # Used across Characterization and Reaction
+
+  step_size:
+    description: Step size for a scan (angle, wavelength, energy, or potential).
+    range: float
+    slot_uri: AFR:0000950
+    multivalued: true
+
+  resolution:
+    description: Resolution of a measurement or detector.
+    range: float
+    slot_uri: coremeta4cat:resolution
+    multivalued: true
+
+  integration_time:
+    description: Integration or acquisition time per measurement step.
+    range: float
+    slot_uri: coremeta4cat:integration_time
+    multivalued: true
+    unit:
+      ucum_code: s
+
+  number_of_scans:
+    description: Number of scans or accumulations recorded.
+    range: integer
+    slot_uri: coremeta4cat:number_of_scans
+    multivalued: true
+
+  operation_mode:
+    description: Operation mode of an instrument (e.g. transmission, reflection, AC, DC).
+    range: string
+    slot_uri: VOC4CAT:0000108
+    multivalued: true
+
+  concentration:
+    description: Concentration of a substance in a sample or solution.
+    range: float
+    slot_uri: coremeta4cat:concentration
+    multivalued: true
+    unit:
+      ucum_code: mol/L
+
+  solvent:
+    description: Solvent used in a process or sample preparation.
+    range: string
+    slot_uri: VOC4CAT:0007246
+    multivalued: true
+
+  injection_volume:
+    description: Volume injected in a chromatographic or mass spectrometric experiment.
+    range: float
+    slot_uri: coremeta4cat:injection_volume
+    multivalued: true
+    unit:
+      ucum_code: uL
+
+  external_standard:
+    description: External standard used for quantification or calibration.
+    range: string
+    slot_uri: coremeta4cat:external_standard
+    multivalued: true
+
+  internal_standard:
+    description: Internal standard used for quantification or calibration.
+    range: string
+    slot_uri: coremeta4cat:internal_standard
+    multivalued: true
+
+  calibration_method:
+    description: Calibration method applied during a measurement.
+    range: string
+    slot_uri: coremeta4cat:calibration_method
+    multivalued: true
+
+  column_type:
+    description: Type of chromatographic column used.
+    range: string
+    slot_uri: coremeta4cat:column_type
+    multivalued: true
+
+  experiment_duration:
+    description: Total duration of the experiment or measurement run.
+    range: float
+    slot_uri: AFR:0002455
+    multivalued: true
+    unit:
+      ucum_code: h
+
+  filtration_device:
+    description: Device used for filtration.
+    range: string
+    slot_uri: coremeta4cat:filtration_device
+    multivalued: true
+
+  filter_type:
+    description: Type of filter membrane or medium used.
+    range: string
+    slot_uri: coremeta4cat:filter_type
+    multivalued: true
+
+# ==================== ENUMERATIONS ====================
+
+enums:
+
+  CatalysisResearchFieldEnum:
+    description: |-
+      Enumeration of catalysis research fields.
+      Intended for use via rdf_type on a dcat:Dataset (via ClassifierMixin)
+      to classify which field of catalysis the dataset belongs to,
+      following DCAT-AP-PLUS Pattern 3 (Flexible classification).
+    permissible_values:
+      heterogeneous_catalysis:
+        description: Heterogeneous catalysis — catalyst and reactants are in different phases.
+        meaning: VOC4CAT:0007001
+      homogeneous_catalysis:
+        description: Homogeneous catalysis — catalyst and reactants are in the same phase.
+        meaning: VOC4CAT:0000294
+      biocatalysis:
+        description: Biocatalysis — use of enzymes or whole cells as catalysts.
+        meaning: VOC4CAT:0000204
+      electrocatalysis:
+        description: Electrocatalysis — catalysis of electrochemical reactions.
+        meaning: VOC4CAT:0000216
+      hybrid_catalysis:
+        description: Hybrid catalysis — combination of two or more catalytic approaches.
+      other:
+        description: Other catalysis research field not covered by the above terms.
+
+  ImpregnationTypeEnum:
+    description: Enumeration of impregnation types used in catalyst synthesis.
+    permissible_values:
+      wet_impregnation:
+        description: Wet impregnation — excess solution is used to impregnate the support.
+      dry_impregnation:
+        description: Dry impregnation — solution volume equals the pore volume of the support.
+      incipient_wetness:
+        description: Incipient wetness impregnation — synonym for dry impregnation.
+      other:
+        description: Other impregnation type.
+
+  SampleStateEnum:
+    description: Enumeration of physical states in which a catalyst sample may be present.
+    permissible_values:
+      solid:
+        description: Solid state.
+      liquid:
+        description: Liquid state.
+      gas:
+        description: Gas state.
+      solution:
+        description: Dissolved in solvent.
+      powder:
+        description: Powder form.
+      pellet:
+        description: Pellet form (pressed powder).
+      thin_film:
+        description: Thin film deposited on a substrate.
+      other:
+        description: Other sample state.

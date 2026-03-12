@@ -1,0 +1,310 @@
+---
+id: https://w3id.org/nfdi4cat/coremeta4cat/reaction/
+name: coremeta4cat-reaction-ap
+title: CoreMeta4cat Reaction Application Profile
+description: |-
+  Application profile for catalytic reactions within the CoreMeta4cat metadata model.
+
+  This module defines:
+  - Reaction — an EvaluatedActivity representing the catalytic process being studied
+  - ReactorDesignType — Device subclass hierarchy (8 concrete reactor types)
+  - OperationParameters — flattened as direct slots on Reaction (see note below)
+  - ProductIdentificationMethod — abstract stub; users point to a
+    CharacterizationTechnique instance from coremeta4cat_characterization_ap
+
+  Alignment to DCAT-AP-PLUS:
+    Reaction          --> is_a: EvaluatedActivity  (the process being studied,
+                        NOT the data-generating process)
+    ReactorDesignType --> is_a: Device             (the AgenticEntity carrying out
+                        the Reaction via carried_out_by)
+
+  The Reaction is NOT a DataGeneratingActivity. It is the catalytic process
+  that a dataset is *about*, linked via is_about_activity on CatalysisDataset.
+  A Characterization activity that runs during the reaction (e.g. operando XRD)
+  will carry both was_generated_by: Characterization and is_about_activity: Reaction.
+
+  OperationParameters design decision:
+  -------------------------------------
+  The original CoreMeta4Cat model wraps operation parameters in a nested class.
+  In this modularised form they are flattened as direct slots on Reaction,
+  consistent with how preparation method parameters are handled on
+  PreparationMethod subclasses in coremeta4cat_synthesis_ap. This avoids
+  an unnecessary wrapper object while preserving all the same information.
+
+  ProductIdentificationMethod design decision:
+  ---------------------------------------------
+  The source defines ProductIdentificationMethod as an abstract class with
+  no concrete subclasses — it is a forward reference to analytical techniques.
+  Users should link a CharacterizationTechnique instance (defined in
+  coremeta4cat_characterization_ap) via product_identification_method. The abstract
+  stub is retained for backward compatibility and schema completeness.
+
+license: CC-BY-4.0
+version: 1.0.0
+
+prefixes:
+  coremeta4cat: https://w3id.org/nfdi4cat/coremeta4cat/
+  VOC4CAT: https://w3id.org/nfdi4cat/voc4cat_
+  dcatapplus: https://w3id.org/nfdi-de/dcat-ap-plus/
+  linkml: https://w3id.org/linkml/
+  prov: http://www.w3.org/ns/prov#
+  OBI: http://purl.obolibrary.org/obo/OBI_
+  NCIT: http://purl.obolibrary.org/obo/NCIT_
+  SIO: http://semanticscience.org/resource/SIO_
+  AFR: http://purl.allotrope.org/ontologies/result#AFR_
+
+default_prefix: coremeta4cat
+default_range: string
+
+imports:
+  - linkml:types
+  - coremeta4cat_common   # shared slots (atmosphere, flow_rate, temperature, …) + enums
+
+# ==================== REACTION (EvaluatedActivity) ====================
+
+classes:
+
+  Reaction:
+    is_a: EvaluatedActivity
+    class_uri: SIO:010345   # chemical reaction
+    description: |-
+      An EvaluatedActivity representing the catalytic reaction being studied.
+
+      Reaction is NOT a DataGeneratingActivity — it is the catalytic process
+      being observed, not the process that generates the dataset. A CatalysisDataset
+      is linked to the Reaction it is about via is_about_activity.
+
+      For operando experiments (e.g. in-situ XRD during a reaction), the dataset
+      carries both:
+        was_generated_by: Characterization  (the measurement producing data)
+        is_about_activity: Reaction         (the catalytic process being monitored)
+
+      The reactor is linked via carried_out_by as a ReactorDesignType (Device).
+      Reactants are linked via had_input_entity. The type of catalytic reaction
+      (e.g. ammonia synthesis, CO oxidation) is expressed via rdf_type using a
+      voc4cat or ChemO term.
+    slots:
+      - catalyst_quantity
+      - reactant
+      - catalyst_type
+      - reactor_temperature_range
+      - atmosphere
+      - experiment_pressure
+      - feed_composition_range
+      - experiment_duration
+      - product_identification_method
+    slot_usage:
+      rdf_type:
+        description: |-
+          The type of catalytic reaction as an ontology term (e.g. VOC4CAT:0007010
+          for a specific reaction type, or a ChemO/RXNO term).
+        recommended: true
+      carried_out_by:
+        description: |-
+          The reactor in which the Reaction takes place, provided as a
+          ReactorDesignType (Device) instance.
+        range: ReactorDesignType
+        required: true
+        multivalued: true
+        inlined_as_list: true
+      had_input_entity:
+        description: |-
+          The reactant chemicals or feeds entering the reactor.
+        range: EvaluatedEntity
+        recommended: true
+        multivalued: true
+        inlined_as_list: true
+      product_identification_method:
+        description: |-
+          The analytical method used to identify and/or quantify reaction products.
+          Should reference a CharacterizationTechnique instance (e.g. a GCMS or
+          HPLC_MS object from coremeta4cat_characterization_ap). The abstract stub
+          ProductIdentificationMethod is retained for backward compatibility.
+        range: ProductIdentificationMethod
+        required: true
+        multivalued: true
+        inlined_as_list: true
+
+  # ==================== PRODUCT IDENTIFICATION METHOD ====================
+
+  ProductIdentificationMethod:
+    is_a: Plan
+    class_uri: OBI:0000272
+    description: |-
+      Abstract Plan representing the method used to identify and quantify reaction
+      products. In practice, users should reference a concrete CharacterizationTechnique
+      subclass from coremeta4cat_characterization_ap (e.g. GCMS, HPLC_MS, NMRSpectroscopy).
+
+      This abstract class is retained for backward compatibility with the original
+      CoreMeta4Cat monolith. It is a subclass of Plan (prov:Plan / OBI:0000272) so that
+      it can participate in the realized_plan slot if needed.
+
+  # ==================== REACTOR DESIGN TYPES (Devices) ====================
+  # ReactorDesignType and its subclasses are Device subclasses (AgenticEntity).
+  # They are the physical reactor carried_out_by which a Reaction takes place.
+  # The reactor type is expressed both via the subclass and optionally via rdf_type.
+
+  ReactorDesignType:
+    is_a: Device
+    class_uri: VOC4CAT:0007018
+    abstract: true
+    description: |-
+      Abstract Device representing the type of reactor used in a catalytic experiment.
+      Concrete subclasses specify the reactor geometry and operating mode.
+      Linked from Reaction via carried_out_by.
+
+  ElectrochemicalReactor:
+    is_a: ReactorDesignType
+    class_uri: VOC4CAT:0000193
+    description: |-
+      Electrochemical reactor used in electrocatalytic experiments, including
+      H-cells, flow cells, and membrane electrode assemblies.
+
+  CSTR:
+    is_a: ReactorDesignType
+    class_uri: VOC4CAT:0007019
+    description: |-
+      Continuous stirred tank reactor (CSTR) — a well-mixed, continuous-flow
+      reactor operating at steady state.
+
+  PlugFlowReactor:
+    is_a: ReactorDesignType
+    class_uri: VOC4CAT:0007102
+    description: |-
+      Plug flow reactor (PFR) — a tubular reactor in which reactant composition
+      varies along the axis with no axial mixing.
+
+  Autoclave:
+    is_a: ReactorDesignType
+    class_uri: NCIT:C93052
+    description: |-
+      Autoclave reactor — a sealed pressure vessel for batch reactions at
+      elevated temperature and/or pressure.
+
+  SlurryReactor:
+    is_a: ReactorDesignType
+    class_uri: coremeta4cat:SlurryReactor
+    description: |-
+      Slurry reactor — a three-phase reactor in which catalyst particles are
+      suspended in a liquid phase through which gas is bubbled.
+
+  Microreactor:
+    is_a: ReactorDesignType
+    class_uri: VOC4CAT:0000234
+    description: |-
+      Microreactor — a miniaturised flow reactor with characteristic dimensions
+      in the sub-millimetre range, enabling precise thermal control and rapid
+      screening.
+
+  FixedBedReactor:
+    is_a: ReactorDesignType
+    class_uri: coremeta4cat:FixedBedReactor
+    description: |-
+      Fixed bed reactor — a tubular reactor packed with a stationary catalyst bed.
+      The most common reactor type in heterogeneous catalysis testing.
+
+  FluidizedBedReactor:
+    is_a: ReactorDesignType
+    class_uri: coremeta4cat:FluidizedBedReactor
+    description: |-
+      Fluidized bed reactor — a reactor in which the catalyst particles are
+      suspended in an upward-flowing gas or liquid stream.
+    slots:
+      - gas_distributor_type
+      - bed_expansion_height
+      - bubble_size_distribution
+
+# ==================== SLOTS ====================
+# Shared slots (atmosphere, flow_rate, temperature, experiment_duration, …)
+# are inherited from coremeta4cat_common and not redeclared here.
+
+slots:
+
+  # ---- Reaction-level slots ----
+
+  catalyst_quantity:
+    description: Mass of catalyst loaded into the reactor.
+    range: float
+    slot_uri: coremeta4cat:catalyst_quantity
+    required: true
+    multivalued: true
+    unit:
+      ucum_code: g
+
+  reactant:
+    description: |-
+      Reactant(s) used in the reaction. Provide compound name, CAS number,
+      or SMILES. For feeds, include composition and flow rate where known.
+    range: string
+    slot_uri: VOC4CAT:0000101
+    required: true
+    multivalued: true
+
+  catalyst_type:
+    description: |-
+      Type of catalyst used (e.g. heterogeneous, homogeneous, biocatalyst).
+      For heterogeneous catalysts, use voc4cat terms where available.
+    range: string
+    slot_uri: VOC4CAT:0007014
+    recommended: true
+    multivalued: true
+
+  # ---- OperationParameters slots (flattened onto Reaction) ----
+
+  reactor_temperature_range:
+    description: |-
+      Temperature range used in the reactor during the reaction, expressed
+      as a string range (e.g. "200–400 °C") or a single set-point.
+    range: string
+    slot_uri: VOC4CAT:0007032
+    multivalued: true
+
+  experiment_pressure:
+    description: Total pressure in the reactor during the experiment.
+    range: float
+    slot_uri: VOC4CAT:0000118
+    multivalued: true
+    unit:
+      ucum_code: bar
+
+  feed_composition_range:
+    description: |-
+      Feed gas or liquid composition range studied (e.g. "1–10 vol% CO in N2").
+      Record as a string; for individual component concentrations use reactant.
+    range: string
+    slot_uri: coremeta4cat:feed_composition_range
+    multivalued: true
+
+  # experiment_duration is inherited from coremeta4cat_common (AFR:0002455, unit h)
+
+  # ---- FluidizedBedReactor-specific slots ----
+
+  gas_distributor_type:
+    description: Type or design of the gas distributor plate in a fluidized bed reactor.
+    range: string
+    slot_uri: coremeta4cat:gas_distributor_type
+    multivalued: true
+
+  bed_expansion_height:
+    description: Height of bed expansion above the settled bed height under operating conditions.
+    range: float
+    slot_uri: coremeta4cat:bed_expansion_height
+    multivalued: true
+    unit:
+      ucum_code: cm
+
+  bubble_size_distribution:
+    description: Description or characterization of bubble size distribution in the fluidized bed.
+    range: string
+    slot_uri: coremeta4cat:bubble_size_distribution
+
+  product_identification_method:
+    description: |-
+      The analytical method used to identify and/or quantify reaction products.
+      Should reference a CharacterizationTechnique instance (e.g. GCMS, HPLC_MS).
+      The abstract stub ProductIdentificationMethod is retained for backward compatibility.
+    range: ProductIdentificationMethod
+    slot_uri: coremeta4cat:product_identification_method
+    required: true
+    multivalued: true
+    inlined_as_list: true
