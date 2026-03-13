@@ -1,0 +1,203 @@
+/* ── WelcomeScreen — tokens match SchemaNode ────────────────────────────────── */
+:root {
+  --ws-accent:  #3b82f6;
+  --ws-accent2: #1d4ed8;
+  --ws-text:    #111827;
+  --ws-muted:   #6b7280;
+  --ws-border:  #e5e7eb;
+  --ws-font:    ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ── Backdrop ──────────────────────────────────────────────────────────────── */
+.ws-backdrop {
+  position:        fixed;
+  inset:           0;
+  z-index:         1000;
+  background:      rgba(17, 24, 39, .82);
+  backdrop-filter: blur(3px);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  font-family:     var(--ws-font);
+}
+
+/* ── Card ──────────────────────────────────────────────────────────────────── */
+.ws-card {
+  background:    #ffffff;
+  border-radius: 14px;
+  padding:       40px 44px 36px;
+  width:         min(520px, 92vw);
+  box-shadow:    0 24px 64px rgba(0, 0, 0, .35);
+  display:       flex;
+  flex-direction: column;
+  align-items:   center;
+  gap:           0;
+}
+
+/* ── Logo & headings ───────────────────────────────────────────────────────── */
+.ws-logo {
+  font-size:   2.4rem;
+  color:       var(--ws-accent);
+  line-height: 1;
+  margin-bottom: 10px;
+  user-select: none;
+}
+
+.ws-title {
+  margin:      0 0 6px;
+  font-size:   1.45rem;
+  font-weight: 700;
+  color:       var(--ws-text);
+  letter-spacing: -.01em;
+}
+
+.ws-sub {
+  margin:    0 0 28px;
+  font-size: 12px;
+  color:     var(--ws-muted);
+}
+
+/* ── Action buttons group ───────────────────────────────────────────────────── */
+.ws-actions {
+  width:         100%;
+  display:       flex;
+  flex-direction: column;
+  gap:           8px;
+  margin-bottom: 20px;
+}
+
+/* ── Primary / secondary buttons ───────────────────────────────────────────── */
+.ws-btn {
+  width:         100%;
+  border:        none;
+  border-radius: 8px;
+  padding:       12px 20px;
+  font-size:     14px;
+  font-family:   var(--ws-font);
+  font-weight:   600;
+  cursor:        pointer;
+  transition:    background .15s, box-shadow .15s;
+}
+
+.ws-btn--primary {
+  background:  var(--ws-accent);
+  color:       #fff;
+  box-shadow:  0 1px 4px rgba(59,130,246,.35);
+}
+.ws-btn--primary:hover {
+  background:  var(--ws-accent2);
+  box-shadow:  0 2px 8px rgba(59,130,246,.45);
+}
+
+.ws-btn--secondary {
+  background:  #f9fafb;
+  color:       var(--ws-text);
+  border:      1.5px solid var(--ws-border);
+}
+.ws-btn--secondary:hover {
+  background:    #f3f4f6;
+  border-color:  #d1d5db;
+}
+
+/* ── Error box ─────────────────────────────────────────────────────────────── */
+.ws-error {
+  width:         100%;
+  background:    #fef2f2;
+  border:        1.5px solid #fca5a5;
+  border-radius: 8px;
+  padding:       12px 14px;
+  margin-bottom: 16px;
+  text-align:    left;
+}
+
+.ws-error__title {
+  font-size:   13px;
+  font-weight: 600;
+  color:       #b91c1c;
+  margin-bottom: 4px;
+}
+
+.ws-error__msg {
+  font-size:  12px;
+  color:      #dc2626;
+  word-break: break-word;
+}
+
+.ws-error__stack {
+  margin:     8px 0 0;
+  font-size:  10px;
+  color:      #ef4444;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 120px;
+  overflow-y: auto;
+  background: #fff5f5;
+  border-radius: 4px;
+  padding:    6px 8px;
+}
+
+/* ── Divider ───────────────────────────────────────────────────────────────── */
+.ws-divider {
+  width:        100%;
+  display:      flex;
+  align-items:  center;
+  gap:          10px;
+  margin-bottom: 16px;
+  color:        var(--ws-muted);
+  font-size:    11px;
+}
+.ws-divider::before,
+.ws-divider::after {
+  content: '';
+  flex:    1;
+  height:  1px;
+  background: var(--ws-border);
+}
+
+/* ── Example cards ─────────────────────────────────────────────────────────── */
+.ws-examples {
+  width:   100%;
+  display: flex;
+  flex-direction: column;
+  gap:     8px;
+}
+
+.ws-example {
+  width:         100%;
+  background:    #f9fafb;
+  border:        1.5px solid var(--ws-border);
+  border-radius: 8px;
+  padding:       12px 14px;
+  text-align:    left;
+  cursor:        pointer;
+  display:       flex;
+  flex-direction: column;
+  gap:           3px;
+  font-family:   var(--ws-font);
+  transition:    border-color .12s, background .12s, box-shadow .12s;
+}
+.ws-example:hover {
+  border-color: var(--ws-accent);
+  background:   #eff6ff;
+  box-shadow:   0 0 0 3px rgba(59,130,246,.12);
+}
+
+.ws-example__badge {
+  font-size:     10px;
+  font-weight:   700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color:         var(--ws-accent);
+}
+
+.ws-example__title {
+  font-size:   13px;
+  font-weight: 600;
+  color:       var(--ws-text);
+}
+
+.ws-example__desc {
+  font-size: 11px;
+  color:     var(--ws-muted);
+  line-height: 1.4;
+}

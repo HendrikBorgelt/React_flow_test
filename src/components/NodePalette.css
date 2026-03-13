@@ -1,0 +1,85 @@
+/* ── NodePalette — design tokens match SchemaNode ──────────────────────────── */
+:root {
+  --np-width:      200px;
+  --np-bg:         #ffffff;
+  --np-border:     #e2e8f0;
+  --np-accent:     #3b82f6;
+  --np-text:       #374151;
+  --np-muted:      #9ca3af;
+  --np-hover-bg:   #eff6ff;
+  --np-hover-fg:   #1d4ed8;
+  --np-font:       ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ── Sidebar shell ─────────────────────────────────────────────────────────── */
+.np-sidebar {
+  width:         var(--np-width);
+  flex-shrink:   0;
+  display:       flex;
+  flex-direction: column;
+  background:    var(--np-bg);
+  border-right:  1.5px solid var(--np-border);
+  font-family:   var(--np-font);
+  font-size:     12px;
+  color:         var(--np-text);
+  overflow:      hidden;
+}
+
+/* ── Header bar ────────────────────────────────────────────────────────────── */
+.np-header {
+  padding:        10px 14px 8px;
+  font-size:      10px;
+  font-weight:    700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color:          var(--np-accent);
+  border-bottom:  1px solid var(--np-border);
+  flex-shrink:    0;
+}
+
+/* ── Search box ────────────────────────────────────────────────────────────── */
+.np-search-wrap {
+  padding:    6px 10px;
+  border-bottom: 1px solid var(--np-border);
+  flex-shrink: 0;
+}
+
+.np-search {
+  width:         100%;
+  box-sizing:    border-box;
+  border:        1px solid var(--np-border);
+  border-radius: 4px;
+  padding:       4px 8px;
+  font-size:     11px;
+  font-family:   var(--np-font);
+  color:         var(--np-text);
+  background:    #fafafa;
+  outline:       none;
+  transition:    border-color .12s;
+}
+.np-search:focus { border-color: var(--np-accent); background: #fff; }
+
+/* ── Class list ────────────────────────────────────────────────────────────── */
+.np-list {
+  list-style: none;
+  margin:     0;
+  padding:    4px 0;
+  overflow-y: auto;
+  flex:       1;
+}
+
+.np-item {
+  padding:       5px 14px;
+  cursor:        pointer;
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  border-radius: 4px;
+  margin:        1px 6px;
+  transition:    background .1s, color .1s;
+}
+
+.np-item:hover {
+  background: var(--np-hover-bg);
+  color:      var(--np-hover-fg);
+}

@@ -1,0 +1,256 @@
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
+:root {
+  --sn-accent:      #3b82f6;
+  --sn-border:      #e2e8f0;
+  --sn-bg:          #ffffff;
+  --sn-header-bg:   #3b82f6;
+  --sn-header-fg:   #ffffff;
+  --sn-text:        #374151;
+  --sn-muted:       #9ca3af;
+  --sn-row-h:       24px;
+  --sn-font:        ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ── Node shell ────────────────────────────────────────────────────────────── */
+.sn-node {
+  background:    var(--sn-bg);
+  border:        1.5px solid var(--sn-border);
+  border-radius: 8px;
+  box-shadow:    0 1px 4px rgba(0,0,0,.07), 0 4px 16px rgba(0,0,0,.05);
+  min-width:     300px;
+  max-width:     360px;
+  font-size:     12px;
+  font-family:   var(--sn-font);
+  color:         var(--sn-text);
+  position:      relative;   /* required — React Flow positions handles relative to this */
+}
+
+.sn-node--selected {
+  border-color: var(--sn-accent);
+  box-shadow:   0 0 0 3px rgba(59,130,246,.18);
+}
+
+/* ── Header ────────────────────────────────────────────────────────────────── */
+.sn-header {
+  background:    var(--sn-header-bg);
+  color:         var(--sn-header-fg);
+  padding:       8px 14px;
+  border-radius: 6px 6px 0 0;
+  font-weight:   600;
+  font-size:     13px;
+  letter-spacing: .01em;
+}
+
+/* ── Scrollable form body ──────────────────────────────────────────────────── */
+.sn-body {
+  padding:    6px 0;
+  max-height: 420px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ── Generic label + control row ──────────────────────────────────────────── */
+.sn-row {
+  display:     flex;
+  align-items: center;
+  gap:         6px;
+  padding:     3px 12px;
+  min-height:  var(--sn-row-h);
+}
+
+.sn-label {
+  flex-shrink:    0;
+  width:          130px;
+  color:          var(--sn-muted);
+  font-size:      11px;
+  white-space:    nowrap;
+  overflow:       hidden;
+  text-overflow:  ellipsis;
+}
+
+.sn-req { color: #ef4444; margin-left: 2px; }
+
+/* ── Input / select ────────────────────────────────────────────────────────── */
+.sn-input {
+  flex:        1;
+  min-width:   0;
+  border:      1px solid var(--sn-border);
+  border-radius: 4px;
+  padding:     3px 7px;
+  font-size:   11px;
+  outline:     none;
+  color:       var(--sn-text);
+  background:  #fafafa;
+  transition:  border-color .12s;
+}
+.sn-input:focus { border-color: var(--sn-accent); background: #fff; }
+
+.sn-select {
+  flex:          1;
+  min-width:     0;
+  border:        1px solid var(--sn-border);
+  border-radius: 4px;
+  padding:       3px 4px;
+  font-size:     11px;
+  background:    #fafafa;
+  color:         var(--sn-text);
+}
+
+/* ── Section divider ───────────────────────────────────────────────────────── */
+.sn-section {
+  border-top:  1px solid var(--sn-border);
+  margin-top:  4px;
+  padding-top: 2px;
+}
+
+.sn-section__title {
+  padding:        3px 12px 2px;
+  font-size:      10px;
+  font-weight:    700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color:          var(--sn-muted);
+  height:         22px;          /* used by handle-position calculation */
+  box-sizing:     border-box;
+  display:        flex;
+  align-items:    center;
+  width:          100%;
+}
+
+/* Toggle variant — clickable section titles */
+.sn-section__title--toggle {
+  background:  none;
+  border:      none;
+  cursor:      pointer;
+  text-align:  left;
+  font:        inherit;
+  font-size:   10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color:       var(--sn-muted);
+}
+.sn-section__title--toggle:hover {
+  color:       var(--sn-accent);
+  background:  #f8faff;
+}
+
+/* Chevron triangle indicator */
+.sn-chevron {
+  display:      inline-block;
+  font-size:    9px;
+  margin-right: 5px;
+  transition:   transform .15s;
+  transform:    rotate(0deg);
+  line-height:  1;
+}
+.sn-chevron--open {
+  transform: rotate(90deg);
+}
+
+/* ── Widget field (Quantitative / Qualitative measurement rows) ────────────── */
+.sn-widget {
+  padding: 2px 12px 4px;
+}
+
+.sn-widget__name {
+  font-size:   11px;
+  color:       #6b7280;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow:    hidden;
+  text-overflow: ellipsis;
+}
+
+.sn-widget__row {
+  display:     flex;
+  gap:         4px;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.sn-input--sm     { width: 70px;  flex: none; }
+.sn-input--unit   { width: 56px;  flex: none; }
+.sn-input--wtitle { flex: 1; color: #6b7280; }
+.sn-input--qt     { flex: 1; font-size: 10px; color: #9ca3af; font-family: ui-monospace, monospace; }
+.sn-input--qt::placeholder { color: #d1d5db; }
+
+/* ── Widget entry card (groups title + value/unit + quantity_type) ─────────── */
+.sn-widget__entry {
+  border:         1px solid var(--sn-border);
+  border-radius:  4px;
+  padding:        4px 6px 2px;
+  margin-bottom:  4px;
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+}
+
+/* ── Lookup section (rdf_type / type / other_identifier rows) ─────────────── */
+.sn-lookup-row {
+  display:     flex;
+  gap:         4px;
+  align-items: center;
+  padding:     2px 12px;
+}
+
+.sn-input--lookup  { flex: 1; }
+.sn-select--slot   { width: 130px; flex: none; font-size: 11px; }
+
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+.sn-btn {
+  border:        none;
+  background:    none;
+  cursor:        pointer;
+  padding:       2px 5px;
+  border-radius: 3px;
+  font-size:     12px;
+  line-height:   1.2;
+  color:         var(--sn-muted);
+}
+.sn-btn:hover         { background: #f3f4f6; }
+.sn-btn--x:hover      { background: #fee2e2; color: #ef4444; }
+.sn-btn--add          { color: var(--sn-accent); padding: 2px 12px; font-size: 11px; }
+.sn-btn--add:hover    { background: #eff6ff; }
+
+/* ── Connections section (non-scrollable, outside sn-body) ────────────────── */
+.sn-connections {
+  border-top:     1px solid var(--sn-border);
+  padding-bottom: 4px;
+}
+
+.sn-conn-row {
+  display:     flex;
+  align-items: center;
+  padding:     0 28px 0 12px;   /* right padding leaves room for handle dot */
+  height:      var(--sn-row-h); /* fixed height — must match CONN_ROW_H in .jsx */
+  box-sizing:  border-box;
+}
+
+.sn-conn-label {
+  font-size:     11px;
+  color:         var(--sn-text);
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── React Flow handles ────────────────────────────────────────────────────── */
+.react-flow__handle.sn-handle--in,
+.react-flow__handle.sn-handle--out {
+  width:        10px;
+  height:       10px;
+  border-radius: 50%;
+  background:   var(--sn-accent);
+  border:       2px solid #fff;
+  box-shadow:   0 0 0 1px var(--sn-accent);
+}
+
+/* ── Error state ───────────────────────────────────────────────────────────── */
+.sn-error {
+  padding:       12px;
+  color:         #ef4444;
+  background:    #fef2f2;
+  border-radius: 6px;
+  font-size:     12px;
+}
