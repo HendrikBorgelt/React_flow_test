@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
-import { Handle, Position, useReactFlow } from '@xyflow/react';
+import { Handle, NodeResizer, Position, useReactFlow } from '@xyflow/react';
 import { getClassInfo } from '../schema/schemaUtils';
 import schema from '../schema/dcat_4c_ap.schema.json';
 import './SchemaNode.css';
@@ -254,6 +254,14 @@ export function SchemaNode({ id, data, selected }) {
 
   return (
     <div ref={nodeRef} className={`sn-node${selected ? ' sn-node--selected' : ''}`}>
+
+      <NodeResizer
+        isVisible={selected}
+        minWidth={280}
+        minHeight={80}
+        lineStyle={{ borderColor: 'var(--sn-accent)', borderWidth: 1.5 }}
+        handleStyle={{ width: 8, height: 8, borderRadius: 2, borderColor: 'var(--sn-accent)', background: '#fff' }}
+      />
 
       <Handle
         type="target"
