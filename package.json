@@ -5,7 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/copy-docs.mjs",
+    "dev:coremeta4cat": "VITE_SCHEMA=coremeta4cat vite",
+    "dev:dcat-ap-plus": "VITE_SCHEMA=dcat-ap-plus vite",
+    "build:app": "vite build",
+    "build": "VITE_SCHEMA=chemdcat vite build && node scripts/copy-docs.mjs",
+    "build:all": "npm run build:app:chemdcat && npm run build:app:coremeta4cat && npm run build:app:dcat-ap-plus && node scripts/copy-docs.mjs",
+    "build:app:chemdcat": "VITE_SCHEMA=chemdcat vite build",
+    "build:app:coremeta4cat": "VITE_SCHEMA=coremeta4cat vite build",
+    "build:app:dcat-ap-plus": "VITE_SCHEMA=dcat-ap-plus vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

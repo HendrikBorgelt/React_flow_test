@@ -1,36 +1,22 @@
 import { useRef, useState } from 'react';
 import { load as yamlLoad } from 'js-yaml';
-import msJson from '../examples/MaterialSample-001.json';
-import ssJson from '../examples/SubstanceSample-001.json';
-import crJson from '../examples/ChemicalReaction-001.json';
-import schema from '../schema/dcat_4c_ap.schema.json';
 import { fromJson } from '../loaders/fromJson';
 import './WelcomeScreen.css';
 
-const EXAMPLES = [
-  {
-    json:  msJson,
-    label: 'MaterialSample',
-    title: "Philip's Wood Sample",
-    desc:  'Physical sample with mass, temperature, volume & pressure measurements.',
-  },
-  {
-    json:  ssJson,
-    label: 'SubstanceSample',
-    title: 'CRS-50440',
-    desc:  'Chemical substance with InChI, SMILES, molecular formula & molar mass.',
-  },
-  {
-    json:  crJson,
-    label: 'ChemicalReaction',
-    title: 'CRR-56408 Reaction',
-    desc:  'Phosphorylation with starting materials, solvents, temperatures & yield.',
-  },
-];
-
-export function WelcomeScreen({ onNew, onLoad }) {
+/**
+ * WelcomeScreen
+ *
+ * Props
+ *   config   – the active schema config (from ~config alias):
+ *              { appTitle, appSubtitle, githubUrl, schema, examples[] }
+ *   onNew    – called when user clicks "Start from scratch"
+ *   onLoad   – called with { nodes, edges } when user loads an example or file
+ */
+export function WelcomeScreen({ config, onNew, onLoad }) {
   const [error, setError] = useState(null);
   const fileRef = useRef(null);
+
+  const { appTitle, appSubtitle, githubUrl, schema, examples } = config;
 
   const tryLoad = (json, label) => {
     setError(null);
@@ -67,8 +53,8 @@ export function WelcomeScreen({ onNew, onLoad }) {
       <div className="ws-card">
 
         <div className="ws-logo">⬡</div>
-        <h1 className="ws-title">Schema Graph Editor</h1>
-        <p className="ws-sub">DCAT-AP+ · chem-dcat-ap visual instance editor</p>
+        <h1 className="ws-title">{appTitle}</h1>
+        <p className="ws-sub">{appSubtitle}</p>
 
         <div className="ws-actions">
           <button className="ws-btn ws-btn--primary" onClick={onNew}>
@@ -96,21 +82,33 @@ export function WelcomeScreen({ onNew, onLoad }) {
           </div>
         )}
 
-        <div className="ws-divider"><span>or load an example</span></div>
+        {examples && examples.length > 0 && (
+          <>
+            <div className="ws-divider"><span>or load an example</span></div>
 
-        <div className="ws-examples">
-          {EXAMPLES.map(ex => (
-            <button
-              key={ex.title}
-              className="ws-example"
-              onClick={() => tryLoad(ex.json, ex.title)}
-            >
-              <span className="ws-example__badge">{ex.label}</span>
-              <span className="ws-example__title">{ex.title}</span>
-              <span className="ws-example__desc">{ex.desc}</span>
-            </button>
-          ))}
-        </div>
+            <div className="ws-examples">
+              {examples.map(ex => (
+                <button
+                  key={ex.title}
+                  className="ws-example"
+                  onClick={() => tryLoad(ex.json, ex.title)}
+                >
+                  <span className="ws-example__badge">{ex.label}</span>
+                  <span className="ws-example__title">{ex.title}</span>
+                  <span className="ws-example__desc">{ex.desc}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {githubUrl && (
+          <div className="ws-footer">
+            <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="ws-footer__link">
+              Schema source ↗
+            </a>
+          </div>
+        )}
 
       </div>
     </div>

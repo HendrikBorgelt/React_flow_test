@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { getClassInfo, validateNode } from '../schema/schemaUtils';
-import schema from '../schema/dcat_4c_ap.schema.json';
+import { config } from '~config';
+const { schema } = config;
 import './ValidationBar.css';
 
 // Collect non-required primitive + enum slots that are currently empty

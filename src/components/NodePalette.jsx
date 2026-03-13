@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { listNodeClasses, getClassInfo } from '../schema/schemaUtils';
-import schema from '../schema/dcat_4c_ap.schema.json';
+import { config } from '~config';
+const { schema } = config;
 import './NodePalette.css';
 
 const TOOLBAR = [

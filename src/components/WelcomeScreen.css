@@ -201,3 +201,19 @@
   color:     var(--ws-muted);
   line-height: 1.4;
 }
+
+/* ── Schema footer link ─────────────────────────────────────────────────── */
+.ws-footer {
+  margin-top:  16px;
+  text-align:  center;
+}
+
+.ws-footer__link {
+  font-size:   11px;
+  color:       var(--ws-muted);
+  text-decoration: none;
+}
+.ws-footer__link:hover {
+  color:       var(--ws-accent);
+  text-decoration: underline;
+}

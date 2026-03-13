@@ -25,9 +25,47 @@ jobs:
           node-version: 20
           cache: npm
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install LinkML
+        run: pip install linkml
+
+      # ── Compile JSON schemas from LinkML YAML sources ───────────────────────
+      - name: Compile chem-dcat-ap schema
+        run: |
+          gen-json-schema schemas/chem_dcat_ap/schema/chem_dcat_ap.yaml \
+            > src/schema/dcat_4c_ap.schema.json
+        continue-on-error: true   # keep existing compiled file if compilation fails
+
+      - name: Compile CoreMeta4Cat schema
+        run: |
+          gen-json-schema schemas/coremeta4cat/schema/coremeta4cat.yaml \
+            > src/schema/coremeta4cat.schema.json
+        continue-on-error: true
+
+      - name: Compile DCAT-AP+ schema
+        run: |
+          gen-json-schema schemas/dcat_ap_plus/schema/dcat_ap_plus.yaml \
+            > src/schema/dcat_ap_plus.schema.json
+        continue-on-error: true
+
+      # ── Install JS dependencies ─────────────────────────────────────────────
       - run: npm ci
 
-      - run: npm run build
+      # ── Build all three schema variants ─────────────────────────────────────
+      - name: Build chem-dcat-ap
+        run: VITE_SCHEMA=chemdcat npm run build:app
+
+      - name: Build CoreMeta4Cat
+        run: VITE_SCHEMA=coremeta4cat npm run build:app
+
+      - name: Build DCAT-AP+
+        run: VITE_SCHEMA=dcat-ap-plus npm run build:app
+
+      # ── Copy static docs pages to dist/ root ───────────────────────────────
+      - run: node scripts/copy-docs.mjs
 
       - uses: actions/upload-pages-artifact@v3
         with:

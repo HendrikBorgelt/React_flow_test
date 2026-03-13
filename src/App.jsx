@@ -21,7 +21,11 @@ import { fromJson } from './loaders/fromJson';
 import { toJson } from './loaders/toJson';
 import { dump as yamlDump, load as yamlLoad } from 'js-yaml';
 import { getClassInfo, isSubtypeOf, validateNode } from './schema/schemaUtils';
-import schema from './schema/dcat_4c_ap.schema.json';
+// ~config resolves to the active schema's config file at build time
+// (set VITE_SCHEMA env var; default: chemdcat)
+import { config } from '~config';
+
+const { schema } = config;
 
 const nodeTypes = { schemaNode: SchemaNode };
 
@@ -235,7 +239,7 @@ export default function App() {
   return (
     <div style={{ display: 'flex', width: '100vw', height: '100vh' }}>
 
-      {welcomeVisible && <WelcomeScreen onNew={handleNew} onLoad={handleLoad} />}
+      {welcomeVisible && <WelcomeScreen config={config} onNew={handleNew} onLoad={handleLoad} />}
 
       {/* ── Left sidebar (toolbar + class palette) ── */}
       <NodePalette

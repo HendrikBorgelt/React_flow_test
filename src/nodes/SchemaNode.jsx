@@ -1,7 +1,8 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { Handle, NodeResizer, Position, useReactFlow } from '@xyflow/react';
 import { getClassInfo, validateNode } from '../schema/schemaUtils';
-import schema from '../schema/dcat_4c_ap.schema.json';
+import { config } from '~config';
+const { schema } = config;
 import './SchemaNode.css';
 
 // Height constants — must match CSS values (used for source-handle positioning)

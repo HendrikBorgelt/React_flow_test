@@ -1,0 +1,7 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "coremeta4cat",
+  "description": "Placeholder — this file must be replaced with the compiled schema.\n\nTo compile:\n  pip install linkml\n  gen-json-schema schemas/coremeta4cat/schema/coremeta4cat.yaml \\\n    > src/schema/coremeta4cat.schema.json\n\nThe GitHub Actions workflow (deploy.yml) does this automatically on every push.",
+  "$defs": {},
+  "type": "object"
+}
