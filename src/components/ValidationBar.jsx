@@ -3,43 +3,43 @@ import { getClassInfo, validateNode } from '../schema/schemaUtils';
 import schema from '../schema/dcat_4c_ap.schema.json';
 import './ValidationBar.css';
 
-// Count non-required primitive + enum slots that are currently empty
-function countOptionalEmpty(className, values) {
+// Collect non-required primitive + enum slots that are currently empty
+function getRecommendedEmpty(className, values) {
   const info = getClassInfo(schema, className);
-  if (!info) return 0;
-  let n = 0;
-  for (const s of [...info.primitiveSlots, ...info.enumSlots]) {
-    if (!s.required) {
+  if (!info) return [];
+  return [...info.primitiveSlots, ...info.enumSlots]
+    .filter(s => {
+      if (s.required) return false;
       const v = values[s.name];
-      if (v === null || v === undefined || v === '') n++;
-    }
-  }
-  return n;
+      return v === null || v === undefined || v === '';
+    })
+    .map(s => s.name);
 }
 
 export function ValidationBar({ nodes, onNext }) {
   const [detailOpen, setDetailOpen] = useState(false);
 
-  const { reqViolations, totalReq, totalOpt } = useMemo(() => {
+  const { reqViolations, totalReq, recViolations, totalRec } = useMemo(() => {
     const reqViolations = [];
-    let totalOpt = 0;
+    const recViolations = [];
     for (const n of nodes) {
       const v = validateNode(n.data.className, n.data.values ?? {}, schema);
       if (v.length) {
-        reqViolations.push({
-          nodeId:    n.id,
-          className: n.data.className,
-          slots:     v,
-        });
+        reqViolations.push({ nodeId: n.id, className: n.data.className, slots: v });
       }
-      totalOpt += countOptionalEmpty(n.data.className, n.data.values ?? {});
+      const rec = getRecommendedEmpty(n.data.className, n.data.values ?? {});
+      if (rec.length) {
+        recViolations.push({ nodeId: n.id, className: n.data.className, count: rec.length });
+      }
     }
     const totalReq = reqViolations.reduce((s, v) => s + v.slots.length, 0);
-    return { reqViolations, totalReq, totalOpt };
+    const totalRec = recViolations.reduce((s, v) => s + v.count, 0);
+    return { reqViolations, totalReq, recViolations, totalRec };
   }, [nodes]);
 
-  const hasReq = totalReq > 0;
-  const isClean = !hasReq && totalOpt === 0;
+  const hasReq   = totalReq > 0;
+  const hasRec   = totalRec > 0;
+  const isClean  = !hasReq && !hasRec;
 
   // ── Clean state ────────────────────────────────────────────────────────────
   if (isClean) {
@@ -79,15 +79,13 @@ export function ValidationBar({ nodes, onNext }) {
               </div>
             )}
 
-            {totalOpt > 0 && (
+            {recViolations.length > 0 && (
               <div className="vb-popover__section">
                 <div className="vb-popover__section-hdr vb-popover__section-hdr--warn">
-                  Optional fields not filled
+                  Recommended fields empty
                 </div>
                 <div className="vb-popover__item vb-popover__item--muted">
-                  {totalOpt} optional field{totalOpt !== 1 ? 's' : ''} are empty
-                  across {nodes.length} node{nodes.length !== 1 ? 's' : ''}.
-                  These are not required but improve metadata quality.
+                  {recViolations.map(v => v.className).join(', ')}
                 </div>
               </div>
             )}
@@ -101,9 +99,9 @@ export function ValidationBar({ nodes, onNext }) {
               ⚠ {totalReq} required
             </span>
           )}
-          {totalOpt > 0 && (
-            <span className="vb-pill vb-pill--opt" title="Empty optional fields">
-              {totalOpt} optional
+          {hasRec && (
+            <span className="vb-pill vb-pill--opt" title="Empty recommended fields">
+              {totalRec} recommended
             </span>
           )}
 
