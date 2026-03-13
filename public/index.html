@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ChemDCAT-AP Widget – Documentation</title>
+  <title>Schema Graph Editor – LinkML Metadata Widget</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
@@ -64,7 +64,7 @@
     }
     .hero h1 { font-size: 42px; font-weight: 300; letter-spacing: -.5px; margin-bottom: 16px; }
     .hero h1 strong { font-weight: 700; }
-    .hero p { font-size: 18px; opacity: .87; max-width: 600px; margin: 0 auto 32px; }
+    .hero p { font-size: 18px; opacity: .87; max-width: 640px; margin: 0 auto 40px; }
     .hero-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
     .btn {
       display: inline-flex; align-items: center; gap: 6px;
@@ -107,7 +107,7 @@
     .card h3 { font-size: 16px; font-weight: 500; margin-bottom: 8px; color: var(--primary-dark); }
     .card p { font-size: 14px; color: var(--text-secondary); }
 
-    /* ── Section headings ── */
+    /* ── Schema variant launch cards ── */
     .section-title {
       font-size: 26px; font-weight: 400;
       color: var(--primary-dark);
@@ -117,6 +117,64 @@
     }
     .section-sub {
       font-size: 14px; color: var(--text-secondary); margin-bottom: 32px;
+    }
+
+    .schema-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 64px;
+    }
+    .schema-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 28px 24px 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+      transition: box-shadow .2s, border-color .2s;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .schema-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.1); border-color: var(--primary); }
+    .schema-card__badge {
+      display: inline-block;
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+      color: var(--primary-dark);
+      background: var(--primary-light);
+      padding: 2px 8px; border-radius: 10px;
+      width: fit-content;
+    }
+    .schema-card h3 { font-size: 17px; font-weight: 500; color: var(--text); }
+    .schema-card p  { font-size: 13px; color: var(--text-secondary); flex: 1; }
+    .schema-card__links {
+      display: flex; align-items: center; gap: 10px;
+      margin-top: 4px;
+    }
+    .schema-card__launch {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 8px 18px; border-radius: 4px;
+      background: var(--accent); color: #fff;
+      font-size: 13px; font-weight: 500; letter-spacing: .5px; text-transform: uppercase;
+      text-decoration: none; transition: box-shadow .2s, opacity .2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,.2);
+    }
+    .schema-card__launch:hover { box-shadow: 0 3px 10px rgba(0,0,0,.3); opacity: .95; }
+    .schema-card__launch--disabled {
+      background: #bdbdbd;
+      box-shadow: none;
+      cursor: default;
+      pointer-events: none;
+    }
+    .schema-card__src {
+      font-size: 12px; color: var(--primary);
+      text-decoration: none;
+    }
+    .schema-card__src:hover { text-decoration: underline; }
+    .schema-card__wip {
+      font-size: 11px; color: var(--text-secondary);
+      background: #fff8e1; border: 1px solid #ffe082;
+      border-radius: 4px; padding: 4px 8px;
     }
 
     /* ── Quick-start steps ── */
@@ -160,32 +218,69 @@
 <body>
 
 <nav>
-  <a class="nav-brand" href="index.html">⚗️ ChemDCAT-AP Widget</a>
+  <a class="nav-brand" href="index.html">⬡ Schema Graph Editor</a>
   <div class="nav-links">
     <a href="index.html" class="active">Home</a>
-    <a href="widget-page.html">Try it</a>
     <a href="howto.html">How-to</a>
     <a href="https://github.com/HendrikBorgelt/React_flow_test" target="_blank">GitHub ↗</a>
   </div>
 </nav>
 
 <div class="hero">
-  <h1>ChemDCAT-AP <strong>Widget</strong></h1>
-  <p>An interactive, schema-driven metadata editor for chemical dataset descriptions — built on <a href="https://github.com/nfdi-de/chem-dcat-ap" target="_blank" style="color:rgba(255,255,255,.87)">ChemDCAT-AP</a> / LinkML.</p>
+  <h1>Schema Graph <strong>Editor</strong></h1>
+  <p>An interactive, schema-driven metadata editor for <a href="https://linkml.io" target="_blank" style="color:rgba(255,255,255,.87)">LinkML</a> instance documents — visualise, edit and export metadata graphs for NFDI chemistry schemas.</p>
   <div class="hero-actions">
-    <a class="btn btn-primary" href="widget-page.html">▶ Launch Widget</a>
     <a class="btn btn-outline" href="howto.html">Read the guide</a>
-    <a class="btn btn-outline" href="https://github.com/nfdi-de/chem-dcat-ap" target="_blank">ChemDCAT-AP Docs ↗</a>
+    <a class="btn btn-outline" href="https://github.com/HendrikBorgelt/React_flow_test" target="_blank">Source on GitHub ↗</a>
   </div>
 </div>
 
 <main>
 
+  <h2 class="section-title">Available schema variants</h2>
+  <p class="section-sub">Each variant is a standalone build pre-loaded with its own LinkML schema and example data.</p>
+
+  <div class="schema-cards">
+
+    <div class="schema-card">
+      <span class="schema-card__badge">Chemistry · NFDI4Cat</span>
+      <h3>chem-dcat-ap</h3>
+      <p>Schema for chemical dataset descriptions: material samples, substance samples, chemical reactions, and analysis datasets. Part of the NFDI4Cat data ecosystem.</p>
+      <div class="schema-card__links">
+        <a class="schema-card__launch" href="chemdcat/">▶ Launch</a>
+        <a class="schema-card__src" href="https://github.com/nfdi-de/chem-dcat-ap" target="_blank" rel="noopener">Schema source ↗</a>
+      </div>
+    </div>
+
+    <div class="schema-card">
+      <span class="schema-card__badge">Catalysis · NFDI4Cat</span>
+      <h3>CoreMeta4Cat</h3>
+      <p>Minimum metadata for catalysis research data: reactions, syntheses, characterizations and simulation datasets. Based on DCAT-AP-PLUS design patterns.</p>
+      <div class="schema-card__links">
+        <a class="schema-card__launch" href="coremeta4cat/">▶ Launch</a>
+        <a class="schema-card__src" href="https://github.com/nfdi4cat/CoreMeta4Cat" target="_blank" rel="noopener">Schema source ↗</a>
+      </div>
+      <span class="schema-card__wip">⚙ Schema compilation pending — palette empty until CI compiles the schema.</span>
+    </div>
+
+    <div class="schema-card">
+      <span class="schema-card__badge">Data · NFDI-DE</span>
+      <h3>DCAT-AP+</h3>
+      <p>Extended DCAT-AP profile for NFDI, adding domain-agnostic metadata for analysis datasets, activities and entities across research disciplines.</p>
+      <div class="schema-card__links">
+        <a class="schema-card__launch" href="dcat-ap-plus/">▶ Launch</a>
+        <a class="schema-card__src" href="https://github.com/nfdi-de/dcat-ap-plus" target="_blank" rel="noopener">Schema source ↗</a>
+      </div>
+      <span class="schema-card__wip">⚙ Schema compilation pending — palette empty until CI compiles the schema.</span>
+    </div>
+
+  </div>
+
   <div class="cards">
     <div class="card">
       <div class="card-icon">🔗</div>
       <h3>Schema-driven</h3>
-      <p>Nodes and fields are generated from the <strong>dcat-4C-ap</strong> LinkML schema. Load any schema class as an editable node on the canvas.</p>
+      <p>Nodes and fields are generated directly from the compiled LinkML schema. Load any schema class as an editable node on the canvas.</p>
     </div>
     <div class="card">
       <div class="card-icon">📐</div>
@@ -195,7 +290,7 @@
     <div class="card">
       <div class="card-icon">↔️</div>
       <h3>Import / Export</h3>
-      <p>Load existing LinkML instance JSON, build or extend the metadata graph, then export as <strong>JSON</strong> or <strong>YAML</strong> — ready for LinkML generators.</p>
+      <p>Load existing LinkML instance JSON/YAML, build or extend the metadata graph, then export — ready for <code>linkml-convert</code> or any LinkML generator.</p>
     </div>
     <div class="card">
       <div class="card-icon">🧩</div>
@@ -205,21 +300,21 @@
   </div>
 
   <h2 class="section-title">Quick start</h2>
-  <p class="section-sub">Getting started with the widget takes just a few clicks.</p>
+  <p class="section-sub">Getting started takes just a few clicks.</p>
 
   <ol class="steps">
     <li>
       <div class="step-num">1</div>
       <div>
-        <h4>Open the widget</h4>
-        <p>Click <strong>"▶ Launch Widget"</strong> above or navigate to the <a href="widget-page.html">Try it</a> page. The welcome screen shows example datasets to explore.</p>
+        <h4>Choose a schema and launch</h4>
+        <p>Click <strong>"▶ Launch"</strong> on one of the schema cards above. The welcome screen offers example datasets to explore immediately.</p>
       </div>
     </li>
     <li>
       <div class="step-num">2</div>
       <div>
         <h4>Load an example or start fresh</h4>
-        <p>Click one of the example cards (e.g. <em>MaterialSample</em>) to load a pre-built metadata graph. Or click <strong>"New canvas"</strong> and drag schema classes from the palette on the left.</p>
+        <p>Click one of the example cards to load a pre-built metadata graph, or click <strong>"+ Start from scratch"</strong> and drag schema classes from the palette on the left.</p>
       </div>
     </li>
     <li>
@@ -240,7 +335,7 @@
       <div class="step-num">5</div>
       <div>
         <h4>Round-trip import</h4>
-        <p>Use <strong>📂 Load</strong> in the toolbar to re-import a previously saved JSON file. The canvas reconstructs all nodes and edges from the saved instance document.</p>
+        <p>Use <strong>📂 Load</strong> in the toolbar to re-import a previously saved JSON or YAML file. The canvas reconstructs all nodes and edges automatically.</p>
       </div>
     </li>
   </ol>
@@ -249,7 +344,9 @@
 
 <footer>
   Built with <a href="https://reactflow.dev" target="_blank">React Flow</a> ·
-  Schema: <a href="https://github.com/nfdi-de/chem-dcat-ap" target="_blank">ChemDCAT-AP</a> ·
+  Schemas: <a href="https://github.com/nfdi-de/chem-dcat-ap" target="_blank">chem-dcat-ap</a> ·
+  <a href="https://github.com/nfdi4cat/CoreMeta4Cat" target="_blank">CoreMeta4Cat</a> ·
+  <a href="https://github.com/nfdi-de/dcat-ap-plus" target="_blank">DCAT-AP+</a> ·
   <a href="https://github.com/HendrikBorgelt/React_flow_test" target="_blank">Source on GitHub</a>
 </footer>
 
