@@ -34,11 +34,39 @@
 .sn-header {
   background:    var(--sn-header-bg);
   color:         var(--sn-header-fg);
-  padding:       8px 14px;
+  padding:       4px 6px 4px 14px;
   border-radius: 6px 6px 0 0;
   font-weight:   600;
   font-size:     13px;
   letter-spacing: .01em;
+  display:       flex;
+  align-items:   center;
+  justify-content: space-between;
+  min-height:    35px;
+}
+
+.sn-header__title {
+  flex: 1;
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+}
+
+.sn-header__delete {
+  flex-shrink:   0;
+  background:    none;
+  border:        none;
+  cursor:        pointer;
+  color:         rgba(255,255,255,.55);
+  font-size:     16px;
+  line-height:   1;
+  padding:       2px 5px;
+  border-radius: 4px;
+  transition:    background .12s, color .12s;
+}
+.sn-header__delete:hover {
+  background: rgba(255,255,255,.18);
+  color:      #fff;
 }
 
 /* ── Scrollable form body ──────────────────────────────────────────────────── */

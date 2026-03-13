@@ -208,7 +208,10 @@ function LookupSection({ slots, values, onBatchUpdate }) {
 // ── SchemaNode ────────────────────────────────────────────────────────────────
 
 export function SchemaNode({ id, data, selected }) {
-  const { updateNodeData } = useReactFlow();
+  const { updateNodeData, deleteElements } = useReactFlow();
+  const deleteNode = useCallback(() => {
+    deleteElements({ nodes: [{ id }] });
+  }, [id, deleteElements]);
   const { className, values = {} } = data;
 
   const info     = getClassInfo(schema, className);
@@ -259,7 +262,14 @@ export function SchemaNode({ id, data, selected }) {
         style={{ top: 20 }}
       />
 
-      <div className="sn-header">{info.name}</div>
+      <div className="sn-header">
+        <span className="sn-header__title">{info.name}</span>
+        <button
+          className="sn-header__delete nodrag"
+          onClick={deleteNode}
+          title="Delete node"
+        >×</button>
+      </div>
 
       {/* ── Connections (always visible, non-scrollable) ─────────────── */}
       {info.refSlots.length > 0 && (
