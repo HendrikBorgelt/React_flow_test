@@ -5,16 +5,16 @@ import {
   applyEdgeChanges,
   addEdge,
   Background,
-  Controls,
+  BackgroundVariant,
   MiniMap,
-  Panel,
   useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { SchemaNode } from './nodes/SchemaNode';
 import { NodePalette } from './components/NodePalette';
+import { CanvasControls } from './components/CanvasControls';
 import { WelcomeScreen } from './components/WelcomeScreen';
-import { SettingsModal } from './components/SettingsModal';
+import { SettingsModal, DEFAULT_SETTINGS } from './components/SettingsModal';
 import { fromJson } from './loaders/fromJson';
 import { toJson } from './loaders/toJson';
 import { dump as yamlDump, load as yamlLoad } from 'js-yaml';
@@ -46,15 +46,26 @@ const initialNodes = [
 
 const initialEdges = [];
 
+// Map bgVariant string to React Flow BackgroundVariant enum
+const BG_VARIANT_MAP = {
+  dots:  BackgroundVariant.Dots,
+  lines: BackgroundVariant.Lines,
+  cross: BackgroundVariant.Cross,
+};
+
 export default function App() {
   const [welcomeVisible, setWelcomeVisible] = useState(true);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [importError, setImportError] = useState(null);
+  const [settingsOpen,   setSettingsOpen]   = useState(false);
+  const [settings,       setSettings]       = useState(DEFAULT_SETTINGS);
+  const [isInteractive,  setIsInteractive]  = useState(true);
+  const [minimapOpen,    setMinimapOpen]    = useState(true);
+  const [importError,    setImportError]    = useState(null);
   const [nodes, setNodes] = useState(initialNodes);
   const [edges, setEdges] = useState(initialEdges);
   const { screenToFlowPosition } = useReactFlow();
-  const toolbarFileRef = useRef(null);
+  const fileInputRef = useRef(null);
 
+  // ── Welcome / load handlers ────────────────────────────────────────────────
   const handleNew = () => {
     setNodes([]);
     setEdges([]);
@@ -80,8 +91,8 @@ export default function App() {
 
   const triggerDownload = (text, filename, mime) => {
     const blob = new Blob([text], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
     a.href = url; a.download = filename;
     document.body.appendChild(a); a.click();
     document.body.removeChild(a); URL.revokeObjectURL(url);
@@ -96,17 +107,21 @@ export default function App() {
   const handleSaveYaml = () => {
     const data = toJson(nodes, edges, schema);
     if (!data) return;
-    triggerDownload(yamlDump(data, { indent: 2, lineWidth: 120 }), getExportFilename('yaml'), 'text/yaml');
+    triggerDownload(
+      yamlDump(data, { indent: 2, lineWidth: 120 }),
+      getExportFilename('yaml'),
+      'text/yaml',
+    );
   };
 
-  // ── Shared parser: JSON or YAML → plain object ────────────────────────────
+  // ── Shared parser: JSON or YAML → plain object ─────────────────────────────
   const parseFile = (text, filename) => {
     const isYaml = /\.(ya?ml)$/i.test(filename);
     return isYaml ? yamlLoad(text) : JSON.parse(text);
   };
 
-  // ── Toolbar file import ────────────────────────────────────────────────────
-  const handleToolbarFile = (e) => {
+  // ── File import ────────────────────────────────────────────────────────────
+  const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
@@ -125,6 +140,7 @@ export default function App() {
     reader.readAsText(file);
   };
 
+  // ── Node / edge change handlers ────────────────────────────────────────────
   const onNodesChange = useCallback(
     changes => setNodes(nds => applyNodeChanges(changes, nds)), []
   );
@@ -132,7 +148,7 @@ export default function App() {
     changes => setEdges(eds => applyEdgeChanges(changes, eds)), []
   );
 
-  // ── Add a new node at the current viewport centre ─────────────────────────
+  // ── Add a new node at the current viewport centre ──────────────────────────
   const addNode = useCallback((className) => {
     const position = screenToFlowPosition({
       x: window.innerWidth  / 2,
@@ -141,9 +157,9 @@ export default function App() {
     const id = `${className.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now()}`;
     setNodes(nds => [...nds, {
       id,
-      type: 'schemaNode',
+      type:     'schemaNode',
       position,
-      data: { className, values: {} },
+      data:     { className, values: {} },
     }]);
   }, [screenToFlowPosition]);
 
@@ -151,6 +167,7 @@ export default function App() {
   const onConnect = useCallback((params) => {
     setEdges(eds => addEdge({
       ...params,
+      type:                settings.edgeType,
       animated:            true,
       label:               params.sourceHandle,
       labelStyle:          { fontSize: 10, fill: '#374151', fontFamily: 'ui-sans-serif, system-ui, sans-serif' },
@@ -158,29 +175,47 @@ export default function App() {
       labelBgPadding:      [4, 2],
       labelBgBorderRadius: 3,
     }, eds));
-  }, []);
+  }, [settings.edgeType]);
 
   // ── Only allow connections where the target class is in the slot's targetClasses ──
   const isValidConnection = useCallback((connection) => {
     const { source, sourceHandle, target } = connection;
-    if (source === target) return false;                    // no self-loops
+    if (source === target) return false;
     const srcNode = nodes.find(n => n.id === source);
     const tgtNode = nodes.find(n => n.id === target);
     if (!srcNode || !tgtNode) return false;
     const info = getClassInfo(schema, srcNode.data.className);
     const slot = info?.refSlots.find(s => s.name === sourceHandle);
-    // Accept if the target class IS one of the expected classes, or is a
-    // structural subtype of one of them (handles base-class refs like Entity).
     return slot?.targetClasses.some(tc => isSubtypeOf(tgtNode.data.className, tc, schema)) ?? false;
   }, [nodes]);
+
+  // ── Settings change — also update existing edges when edgeType changes ─────
+  const handleSettingsChange = (next) => {
+    setSettings(next);
+    if (next.edgeType !== settings.edgeType) {
+      setEdges(eds => eds.map(e => ({ ...e, type: next.edgeType })));
+    }
+  };
 
   return (
     <div style={{ display: 'flex', width: '100vw', height: '100vh' }}>
 
       {welcomeVisible && <WelcomeScreen onNew={handleNew} onLoad={handleLoad} />}
 
-      <NodePalette onAddNode={addNode} />
+      {/* ── Left sidebar (toolbar + class palette) ── */}
+      <NodePalette
+        onAddNode={addNode}
+        onHome={() => setWelcomeVisible(true)}
+        onSaveJson={handleSaveJson}
+        onSaveYaml={handleSaveYaml}
+        onSettings={() => setSettingsOpen(true)}
+        fileInputRef={fileInputRef}
+        onFileChange={handleFileChange}
+        importError={importError}
+        onDismissError={() => setImportError(null)}
+      />
 
+      {/* ── Canvas ─────────────────────────────────── */}
       <div style={{ flex: 1 }}>
         <ReactFlow
           nodes={nodes}
@@ -190,69 +225,52 @@ export default function App() {
           onConnect={onConnect}
           isValidConnection={isValidConnection}
           nodeTypes={nodeTypes}
+          nodesDraggable={isInteractive}
+          nodesConnectable={isInteractive}
+          elementsSelectable={isInteractive}
+          minZoom={settings.minZoom}
+          maxZoom={settings.maxZoom}
+          snapToGrid={settings.snapToGrid}
+          snapGrid={settings.snapGrid}
+          defaultEdgeOptions={{ type: settings.edgeType, animated: true }}
           fitView
           fitViewOptions={{ padding: 0.3 }}
         >
-          <Background />
-          <Controls />
-          <MiniMap />
-          <Panel position="top-right">
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <button onClick={() => setWelcomeVisible(true)} style={toolbarBtnStyle} title="Home"
-                >⌂ Home</button>
-                <button onClick={() => toolbarFileRef.current.click()} style={toolbarBtnStyle} title="Load JSON/YAML file"
-                >📂 Load</button>
-                <button onClick={handleSaveJson} style={toolbarBtnStyle} title="Save as LinkML instance JSON"
-                >↓ JSON</button>
-                <button onClick={handleSaveYaml} style={toolbarBtnStyle} title="Save as LinkML instance YAML"
-                >↓ YAML</button>
-                <button onClick={() => setSettingsOpen(true)} style={toolbarBtnStyle} title="Settings"
-                >⚙ Settings</button>
-              </div>
-              {importError && (
-                <div style={importErrorStyle} onClick={() => setImportError(null)} title="Click to dismiss">
-                  ⚠ {importError}
-                </div>
-              )}
-            </div>
-            <input
-              ref={toolbarFileRef}
-              type="file"
-              accept=".json,.yaml,.yml,application/json,text/yaml"
-              style={{ display: 'none' }}
-              onChange={handleToolbarFile}
+          <Background variant={BG_VARIANT_MAP[settings.bgVariant] ?? BackgroundVariant.Dots} />
+
+          {/* Custom zoom / lock / minimap controls */}
+          <CanvasControls
+            isInteractive={isInteractive}
+            onToggleInteractive={() => setIsInteractive(v => !v)}
+            minimapOpen={minimapOpen}
+            onToggleMinimap={() => setMinimapOpen(v => !v)}
+          />
+
+          {/* Collapsible minimap — dark theme so nodes are visible */}
+          {minimapOpen && (
+            <MiniMap
+              nodeColor="#3b82f6"
+              maskColor="rgba(15,23,42,0.55)"
+              style={{
+                background:   '#1e293b',
+                borderRadius: '8px',
+                border:       '1.5px solid #334155',
+              }}
             />
-          </Panel>
+          )}
+
         </ReactFlow>
       </div>
 
-      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      {/* ── Settings modal ─────────────────────────── */}
+      {settingsOpen && (
+        <SettingsModal
+          settings={settings}
+          onChange={handleSettingsChange}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
 
     </div>
   );
 }
-
-const importErrorStyle = {
-  maxWidth:     '320px',
-  padding:      '6px 10px',
-  borderRadius: '6px',
-  background:   '#fef2f2',
-  border:       '1px solid #fca5a5',
-  color:        '#b91c1c',
-  fontSize:     '11px',
-  cursor:       'pointer',
-  wordBreak:    'break-word',
-};
-
-const toolbarBtnStyle = {
-  padding:      '5px 12px',
-  border:       '1px solid #e2e8f0',
-  borderRadius: '6px',
-  background:   '#ffffff',
-  color:        '#374151',
-  fontSize:     '12px',
-  cursor:       'pointer',
-  fontFamily:   'ui-sans-serif, system-ui, sans-serif',
-  boxShadow:    '0 1px 3px rgba(0,0,0,.08)',
-};

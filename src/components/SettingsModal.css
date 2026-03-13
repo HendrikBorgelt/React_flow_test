@@ -1,24 +1,246 @@
-/* SettingsModal — extends WelcomeScreen card styles */
+/* ── Settings Modal ─────────────────────────────────────────────────────────── */
+
+.sm-backdrop {
+  position:        fixed;
+  inset:           0;
+  z-index:         1000;
+  background:      rgba(17, 24, 39, .60);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+}
 
 .sm-card {
-  max-width: 380px;
+  background:    #ffffff;
+  border-radius: 12px;
+  box-shadow:    0 20px 60px rgba(0, 0, 0, .28);
+  width:         420px;
+  max-width:     94vw;
+  max-height:    88vh;
+  overflow-y:    auto;
+  display:       flex;
+  flex-direction: column;
+  font-family:   ui-sans-serif, system-ui, sans-serif;
+  font-size:     13px;
+  color:         #374151;
 }
 
-.sm-placeholder {
-  display:         flex;
-  flex-direction:  column;
-  align-items:     center;
-  gap:             8px;
-  padding:         28px 0 32px;
-  color:           #9ca3af;
+/* ── Modal header ─────────────────────────────────────────────────────────── */
+.sm-header {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+  padding:     20px 24px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
 }
 
-.sm-placeholder__icon {
-  font-size: 2rem;
+.sm-header__icon {
+  font-size:   22px;
   line-height: 1;
+  color:       #3b82f6;
 }
 
-.sm-placeholder__text {
-  margin:    0;
-  font-size: 13px;
+.sm-header__title {
+  flex:        1;
+  font-size:   17px;
+  font-weight: 600;
+  color:       #111827;
+  margin:      0;
 }
+
+.sm-header__close {
+  background:    none;
+  border:        none;
+  cursor:        pointer;
+  font-size:     20px;
+  line-height:   1;
+  color:         #9ca3af;
+  padding:       2px 6px;
+  border-radius: 4px;
+  transition:    background .1s, color .1s;
+}
+.sm-header__close:hover { background: #f3f4f6; color: #374151; }
+
+/* ── Sections ─────────────────────────────────────────────────────────────── */
+.sm-section {
+  padding:       16px 24px 8px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.sm-section:last-of-type { border-bottom: none; }
+
+.sm-section__title {
+  font-size:      10px;
+  font-weight:    700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color:          #3b82f6;
+  margin:         0 0 10px;
+}
+
+/* ── Rows ─────────────────────────────────────────────────────────────────── */
+.sm-row {
+  display:     flex;
+  align-items: center;
+  gap:         12px;
+  margin-bottom: 10px;
+  min-height:  28px;
+}
+
+.sm-row--sub { padding-left: 12px; }
+
+.sm-label {
+  flex:        0 0 110px;
+  font-size:   12px;
+  color:       #4b5563;
+  font-weight: 500;
+  display:     flex;
+  align-items: center;
+  gap:         6px;
+}
+
+.sm-value {
+  font-size:   11px;
+  font-weight: 400;
+  color:       #6b7280;
+  font-family: ui-monospace, monospace;
+  min-width:   32px;
+  text-align:  right;
+}
+
+/* ── Slider ─────────────────────────────────────────────────────────────────*/
+.sm-slider {
+  flex:          1;
+  -webkit-appearance: none;
+  appearance:    none;
+  height:        4px;
+  border-radius: 2px;
+  background:    #e5e7eb;
+  outline:       none;
+  cursor:        pointer;
+  accent-color:  #3b82f6;
+}
+.sm-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width:         14px;
+  height:        14px;
+  border-radius: 50%;
+  background:    #3b82f6;
+  border:        2px solid #fff;
+  box-shadow:    0 0 0 1.5px #3b82f6;
+  cursor:        pointer;
+}
+
+/* ── Toggle switch ──────────────────────────────────────────────────────── */
+.sm-toggle {
+  position:  relative;
+  display:   inline-flex;
+  cursor:    pointer;
+  flex-shrink: 0;
+}
+.sm-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+.sm-toggle__track {
+  display:       block;
+  width:         36px;
+  height:        20px;
+  border-radius: 10px;
+  background:    #d1d5db;
+  transition:    background .15s;
+}
+.sm-toggle__track::after {
+  content:       '';
+  position:      absolute;
+  top:           3px;
+  left:          3px;
+  width:         14px;
+  height:        14px;
+  border-radius: 50%;
+  background:    #fff;
+  box-shadow:    0 1px 3px rgba(0,0,0,.2);
+  transition:    left .15s;
+}
+.sm-toggle input:checked ~ .sm-toggle__track {
+  background: #3b82f6;
+}
+.sm-toggle input:checked ~ .sm-toggle__track::after {
+  left: 19px;
+}
+
+/* ── Radio group ─────────────────────────────────────────────────────────── */
+.sm-radio-group {
+  display:  flex;
+  gap:      12px;
+  flex-wrap: wrap;
+}
+
+.sm-radio {
+  display:     flex;
+  align-items: center;
+  gap:         5px;
+  cursor:      pointer;
+  font-size:   12px;
+  color:       #374151;
+  accent-color: #3b82f6;
+}
+
+/* ── Number input ────────────────────────────────────────────────────────── */
+.sm-input-num {
+  width:         60px;
+  border:        1px solid #e5e7eb;
+  border-radius: 5px;
+  padding:       4px 8px;
+  font-size:     12px;
+  font-family:   ui-monospace, monospace;
+  color:         #374151;
+  background:    #fafafa;
+  outline:       none;
+  transition:    border-color .12s;
+}
+.sm-input-num:focus { border-color: #3b82f6; background: #fff; }
+
+/* ── Select ──────────────────────────────────────────────────────────────── */
+.sm-select {
+  flex:          1;
+  border:        1px solid #e5e7eb;
+  border-radius: 5px;
+  padding:       5px 8px;
+  font-size:     12px;
+  font-family:   ui-sans-serif, system-ui, sans-serif;
+  color:         #374151;
+  background:    #fafafa;
+  cursor:        pointer;
+  outline:       none;
+}
+.sm-select:focus { border-color: #3b82f6; }
+
+/* ── Footer ─────────────────────────────────────────────────────────────── */
+.sm-footer {
+  display:         flex;
+  justify-content: flex-end;
+  gap:             10px;
+  padding:         16px 24px 20px;
+  flex-shrink:     0;
+}
+
+.sm-btn {
+  border:        none;
+  cursor:        pointer;
+  padding:       8px 18px;
+  border-radius: 7px;
+  font-size:     13px;
+  font-family:   ui-sans-serif, system-ui, sans-serif;
+  font-weight:   500;
+  transition:    background .12s, color .12s;
+}
+
+.sm-btn--primary {
+  background: #3b82f6;
+  color:      #ffffff;
+}
+.sm-btn--primary:hover { background: #2563eb; }
+
+.sm-btn--ghost {
+  background: transparent;
+  color:      #6b7280;
+}
+.sm-btn--ghost:hover { background: #f3f4f6; color: #374151; }
