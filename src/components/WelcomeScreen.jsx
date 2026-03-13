@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { load as yamlLoad } from 'js-yaml';
 import msJson from '../examples/MaterialSample-001.json';
 import ssJson from '../examples/SubstanceSample-001.json';
 import crJson from '../examples/ChemicalReaction-001.json';
@@ -45,16 +46,18 @@ export function WelcomeScreen({ onNew, onLoad }) {
     if (!file) return;
     // Reset so the same file can be re-selected after fixing
     e.target.value = '';
+    const isYaml = /\.(ya?ml)$/i.test(file.name);
     const reader = new FileReader();
     reader.onload = (ev) => {
-      let json;
+      let data;
       try {
-        json = JSON.parse(ev.target.result);
+        data = isYaml ? yamlLoad(ev.target.result) : JSON.parse(ev.target.result);
       } catch (parseErr) {
-        setError({ label: file.name, message: `Invalid JSON: ${parseErr.message}` });
+        const fmt = isYaml ? 'YAML' : 'JSON';
+        setError({ label: file.name, message: `Invalid ${fmt}: ${parseErr.message}` });
         return;
       }
-      tryLoad(json, file.name);
+      tryLoad(data, file.name);
     };
     reader.readAsText(file);
   };
@@ -78,7 +81,7 @@ export function WelcomeScreen({ onNew, onLoad }) {
         <input
           ref={fileRef}
           type="file"
-          accept=".json,application/json"
+          accept=".json,.yaml,.yml,application/json,text/yaml"
           style={{ display: 'none' }}
           onChange={handleFileChange}
         />

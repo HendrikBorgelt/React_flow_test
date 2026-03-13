@@ -17,7 +17,7 @@ import { WelcomeScreen } from './components/WelcomeScreen';
 import { SettingsModal } from './components/SettingsModal';
 import { fromJson } from './loaders/fromJson';
 import { toJson } from './loaders/toJson';
-import { dump as yamlDump } from 'js-yaml';
+import { dump as yamlDump, load as yamlLoad } from 'js-yaml';
 import { getClassInfo, isSubtypeOf } from './schema/schemaUtils';
 import schema from './schema/dcat_4c_ap.schema.json';
 
@@ -99,6 +99,12 @@ export default function App() {
     triggerDownload(yamlDump(data, { indent: 2, lineWidth: 120 }), getExportFilename('yaml'), 'text/yaml');
   };
 
+  // ── Shared parser: JSON or YAML → plain object ────────────────────────────
+  const parseFile = (text, filename) => {
+    const isYaml = /\.(ya?ml)$/i.test(filename);
+    return isYaml ? yamlLoad(text) : JSON.parse(text);
+  };
+
   // ── Toolbar file import ────────────────────────────────────────────────────
   const handleToolbarFile = (e) => {
     const file = e.target.files?.[0];
@@ -108,8 +114,8 @@ export default function App() {
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
-        const json = JSON.parse(ev.target.result);
-        const { nodes: ns, edges: es } = fromJson(json, schema);
+        const data = parseFile(ev.target.result, file.name);
+        const { nodes: ns, edges: es } = fromJson(data, schema);
         setNodes(ns);
         setEdges(es);
       } catch (err) {
@@ -213,7 +219,7 @@ export default function App() {
             <input
               ref={toolbarFileRef}
               type="file"
-              accept=".json,application/json"
+              accept=".json,.yaml,.yml,application/json,text/yaml"
               style={{ display: 'none' }}
               onChange={handleToolbarFile}
             />
