@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChemDCAT-AP Widget – Documentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #00796b;
+      --primary-dark: #004c40;
+      --primary-light: #e0f2f1;
+      --accent: #ff6f00;
+      --text: #212121;
+      --text-secondary: #616161;
+      --surface: #ffffff;
+      --bg: #fafafa;
+      --border: #e0e0e0;
+      --nav-height: 56px;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* ── Top nav ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: var(--nav-height);
+      background: var(--primary);
+      color: #fff;
+      display: flex; align-items: center;
+      padding: 0 24px;
+      gap: 24px;
+      box-shadow: 0 2px 4px rgba(0,0,0,.2);
+    }
+    nav .nav-brand {
+      font-size: 18px; font-weight: 500; letter-spacing: .4px;
+      text-decoration: none; color: #fff;
+    }
+    nav .nav-links { display: flex; gap: 8px; margin-left: auto; }
+    nav .nav-links a {
+      color: rgba(255,255,255,.87);
+      text-decoration: none; font-size: 14px; font-weight: 500;
+      padding: 6px 12px; border-radius: 4px;
+      transition: background .15s;
+    }
+    nav .nav-links a:hover { background: rgba(255,255,255,.15); }
+    nav .nav-links a.active { background: rgba(255,255,255,.2); color: #fff; }
+
+    /* ── Hero ── */
+    .hero {
+      margin-top: var(--nav-height);
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+      color: #fff;
+      padding: 72px 24px 64px;
+      text-align: center;
+    }
+    .hero h1 { font-size: 42px; font-weight: 300; letter-spacing: -.5px; margin-bottom: 16px; }
+    .hero h1 strong { font-weight: 700; }
+    .hero p { font-size: 18px; opacity: .87; max-width: 600px; margin: 0 auto 32px; }
+    .hero-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 12px 28px; border-radius: 4px;
+      font-size: 14px; font-weight: 500; letter-spacing: .8px; text-transform: uppercase;
+      text-decoration: none; transition: box-shadow .2s, opacity .2s;
+      cursor: pointer; border: none;
+    }
+    .btn-primary {
+      background: var(--accent); color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    }
+    .btn-primary:hover { box-shadow: 0 4px 16px rgba(0,0,0,.4); opacity: .95; }
+    .btn-outline {
+      background: transparent; color: #fff;
+      border: 2px solid rgba(255,255,255,.7);
+    }
+    .btn-outline:hover { background: rgba(255,255,255,.1); }
+
+    /* ── Main content ── */
+    main { max-width: 960px; margin: 0 auto; padding: 56px 24px; }
+
+    /* ── Feature cards ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+      margin-bottom: 64px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 28px 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+      transition: box-shadow .2s;
+    }
+    .card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.1); }
+    .card-icon { font-size: 32px; margin-bottom: 12px; }
+    .card h3 { font-size: 16px; font-weight: 500; margin-bottom: 8px; color: var(--primary-dark); }
+    .card p { font-size: 14px; color: var(--text-secondary); }
+
+    /* ── Section headings ── */
+    .section-title {
+      font-size: 26px; font-weight: 400;
+      color: var(--primary-dark);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--primary-light);
+    }
+    .section-sub {
+      font-size: 14px; color: var(--text-secondary); margin-bottom: 32px;
+    }
+
+    /* ── Quick-start steps ── */
+    .steps { list-style: none; margin-bottom: 64px; }
+    .steps li {
+      display: flex; gap: 20px;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .steps li:last-child { border-bottom: none; }
+    .step-num {
+      flex-shrink: 0;
+      width: 36px; height: 36px;
+      background: var(--primary); color: #fff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700;
+    }
+    .steps h4 { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+    .steps p  { font-size: 14px; color: var(--text-secondary); }
+    code {
+      font-family: 'Roboto Mono', monospace;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      padding: 1px 6px; border-radius: 3px;
+      font-size: 12.5px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 32px 24px;
+      border-top: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+    footer a { color: var(--primary); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="index.html">⚗️ ChemDCAT-AP Widget</a>
+  <div class="nav-links">
+    <a href="index.html" class="active">Home</a>
+    <a href="widget.html">Try it</a>
+    <a href="howto.html">How-to</a>
+    <a href="https://github.com/HendrikBorgelt/React_flow_test" target="_blank">GitHub ↗</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>ChemDCAT-AP <strong>Widget</strong></h1>
+  <p>An interactive, schema-driven metadata editor for chemical dataset descriptions — built on <a href="https://github.com/nfdi-de/chem-dcat-ap" target="_blank" style="color:rgba(255,255,255,.87)">ChemDCAT-AP</a> / LinkML.</p>
+  <div class="hero-actions">
+    <a class="btn btn-primary" href="widget.html">▶ Launch Widget</a>
+    <a class="btn btn-outline" href="howto.html">Read the guide</a>
+    <a class="btn btn-outline" href="https://github.com/nfdi-de/chem-dcat-ap" target="_blank">ChemDCAT-AP Docs ↗</a>
+  </div>
+</div>
+
+<main>
+
+  <div class="cards">
+    <div class="card">
+      <div class="card-icon">🔗</div>
+      <h3>Schema-driven</h3>
+      <p>Nodes and fields are generated from the <strong>dcat-4C-ap</strong> LinkML schema. Load any schema class as an editable node on the canvas.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📐</div>
+      <h3>Quantitative attributes</h3>
+      <p>Measurement fields carry <code>value</code>, <code>unit</code>, and auto-derived <code>has_quantity_type</code> (QUDT URIs) — fully round-trippable.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">↔️</div>
+      <h3>Import / Export</h3>
+      <p>Load existing LinkML instance JSON, build or extend the metadata graph, then export as <strong>JSON</strong> or <strong>YAML</strong> — ready for LinkML generators.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🧩</div>
+      <h3>Embeddable</h3>
+      <p>Designed as a standalone web component — embed via <code>&lt;iframe&gt;</code> in ELNs, documentation sites, or data portals.</p>
+    </div>
+  </div>
+
+  <h2 class="section-title">Quick start</h2>
+  <p class="section-sub">Getting started with the widget takes just a few clicks.</p>
+
+  <ol class="steps">
+    <li>
+      <div class="step-num">1</div>
+      <div>
+        <h4>Open the widget</h4>
+        <p>Click <strong>"▶ Launch Widget"</strong> above or navigate to the <a href="widget.html">Try it</a> page. The welcome screen shows example datasets to explore.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">2</div>
+      <div>
+        <h4>Load an example or start fresh</h4>
+        <p>Click one of the example cards (e.g. <em>MaterialSample</em>) to load a pre-built metadata graph. Or click <strong>"New canvas"</strong> and drag schema classes from the palette on the left.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">3</div>
+      <div>
+        <h4>Edit nodes and connect them</h4>
+        <p>Click any node to expand its fields. Fill in text, pick units for measurements, and drag handles between nodes to create relationships. Use <code>has_mass</code>, <code>has_temperature</code>, and other measurement slots directly.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">4</div>
+      <div>
+        <h4>Export to LinkML</h4>
+        <p>Click <strong>↓ JSON</strong> or <strong>↓ YAML</strong> in the toolbar to download a LinkML-compatible instance document. Feed it to <code>linkml-convert</code>, <code>gen-jsonld</code>, or any other LinkML generator.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">5</div>
+      <div>
+        <h4>Round-trip import</h4>
+        <p>Use <strong>📂 Load</strong> in the toolbar to re-import a previously saved JSON file. The canvas reconstructs all nodes and edges from the saved instance document.</p>
+      </div>
+    </li>
+  </ol>
+
+</main>
+
+<footer>
+  Built with <a href="https://reactflow.dev" target="_blank">React Flow</a> ·
+  Schema: <a href="https://github.com/nfdi-de/chem-dcat-ap" target="_blank">ChemDCAT-AP</a> ·
+  <a href="https://github.com/HendrikBorgelt/React_flow_test" target="_blank">Source on GitHub</a>
+</footer>
+
+</body>
+</html>
