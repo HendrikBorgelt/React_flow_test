@@ -267,3 +267,52 @@ export function isSubtypeOf(childName, parentName, schema) {
   if (!parent?.properties || !child?.properties) return false;
   return Object.keys(parent.properties).every(k => k in child.properties);
 }
+
+/**
+ * Returns an array of required-field violations for a node's current values.
+ *
+ * Each violation is: { slotName: string, section: 'fields'|'measurements'|'references' }
+ *
+ * A slot is "violated" when it is marked required in the schema and its
+ * current value is empty (null / undefined / '' / empty array).
+ *
+ * @param {string} className
+ * @param {object} values      – node data.values
+ * @param {object} schemaDoc   – parsed dcat_4c_ap.schema.json
+ */
+export function validateNode(className, values, schemaDoc) {
+  const info = getClassInfo(schemaDoc, className);
+  if (!info) return [];
+
+  const violations = [];
+
+  const isEmpty = v =>
+    v === null || v === undefined || v === '' ||
+    (Array.isArray(v) && v.length === 0);
+
+  for (const s of info.primitiveSlots) {
+    if (s.required && isEmpty(values[s.name])) {
+      violations.push({ slotName: s.name, section: 'fields' });
+    }
+  }
+
+  for (const s of info.enumSlots) {
+    if (s.required && isEmpty(values[s.name])) {
+      violations.push({ slotName: s.name, section: 'fields' });
+    }
+  }
+
+  for (const s of info.widgetSlots) {
+    if (s.required && isEmpty(values[s.name])) {
+      violations.push({ slotName: s.name, section: 'measurements' });
+    }
+  }
+
+  for (const s of info.lookupSlots) {
+    if (s.required && isEmpty(values[s.name])) {
+      violations.push({ slotName: s.name, section: 'references' });
+    }
+  }
+
+  return violations;
+}

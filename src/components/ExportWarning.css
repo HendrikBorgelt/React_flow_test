@@ -1,0 +1,120 @@
+/* ── Export Warning Modal ───────────────────────────────────────────────────── */
+
+.ew-backdrop {
+  position:        fixed;
+  inset:           0;
+  z-index:         1100;   /* above SettingsModal (1000) */
+  background:      rgba(17, 24, 39, .65);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+}
+
+.ew-card {
+  background:     #ffffff;
+  border-radius:  12px;
+  box-shadow:     0 20px 60px rgba(0, 0, 0, .28);
+  width:          440px;
+  max-width:      92vw;
+  max-height:     80vh;
+  overflow-y:     auto;
+  font-family:    ui-sans-serif, system-ui, sans-serif;
+  font-size:      13px;
+  color:          #374151;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.ew-header {
+  display:      flex;
+  align-items:  center;
+  gap:          10px;
+  padding:      20px 24px 14px;
+  border-bottom: 1px solid #fee2e2;
+  background:   #fef2f2;
+  border-radius: 12px 12px 0 0;
+}
+
+.ew-header__icon {
+  font-size:   22px;
+  line-height: 1;
+  color:       #ef4444;
+}
+
+.ew-header__title {
+  font-size:   16px;
+  font-weight: 600;
+  color:       #991b1b;
+  margin:      0;
+}
+
+/* ── Body ───────────────────────────────────────────────────────────────── */
+.ew-body__lead {
+  padding:   14px 24px 0;
+  font-size: 13px;
+  color:     #4b5563;
+  margin:    0;
+}
+
+/* ── Violation list ──────────────────────────────────────────────────────── */
+.ew-list {
+  list-style: none;
+  margin:     10px 24px 0;
+  padding:    0;
+  display:    flex;
+  flex-direction: column;
+  gap:        6px;
+}
+
+.ew-item {
+  display:       flex;
+  flex-direction: column;
+  gap:           2px;
+  background:    #fef9f9;
+  border:        1px solid #fca5a5;
+  border-radius: 6px;
+  padding:       8px 12px;
+}
+
+.ew-item__class {
+  font-weight:  600;
+  font-size:    12px;
+  color:        #b91c1c;
+}
+
+.ew-item__fields {
+  font-size:   11px;
+  color:       #6b7280;
+  font-family: ui-monospace, monospace;
+  word-break:  break-all;
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────── */
+.ew-footer {
+  display:         flex;
+  justify-content: flex-end;
+  gap:             10px;
+  padding:         16px 24px 20px;
+}
+
+.ew-btn {
+  border:        none;
+  cursor:        pointer;
+  padding:       8px 18px;
+  border-radius: 7px;
+  font-size:     13px;
+  font-family:   ui-sans-serif, system-ui, sans-serif;
+  font-weight:   500;
+  transition:    background .12s, color .12s;
+}
+
+.ew-btn--ghost {
+  background: transparent;
+  color:      #6b7280;
+}
+.ew-btn--ghost:hover { background: #f3f4f6; color: #374151; }
+
+.ew-btn--danger {
+  background: #ef4444;
+  color:      #ffffff;
+}
+.ew-btn--danger:hover { background: #dc2626; }

@@ -75,6 +75,21 @@
   color:      #fff;
 }
 
+/* Validation error badge in header (count of missing required fields) */
+.sn-header__badge {
+  flex-shrink:   0;
+  background:    #ef4444;
+  color:         #fff;
+  font-size:     10px;
+  font-weight:   700;
+  line-height:   1;
+  padding:       2px 5px;
+  border-radius: 9px;
+  min-width:     16px;
+  text-align:    center;
+  margin-right:  2px;
+}
+
 /* ── Scrollable form body ──────────────────────────────────────────────────── */
 .sn-body {
   padding:    6px 0;
@@ -289,4 +304,52 @@
   background:    #fef2f2;
   border-radius: 6px;
   font-size:     12px;
+}
+
+/* ── Inline validation ─────────────────────────────────────────────────────── */
+
+/* Red border on empty required inputs */
+.sn-input--invalid {
+  border-color: #ef4444 !important;
+  background:   #fff5f5;
+}
+.sn-input--invalid:focus {
+  border-color: #dc2626 !important;
+  background:   #fff;
+  box-shadow:   0 0 0 2px rgba(239,68,68,.15);
+}
+
+.sn-select--invalid {
+  border-color: #ef4444 !important;
+  background:   #fff5f5;
+}
+
+/* Red outline around an empty required widget slot (no entries added yet) */
+.sn-widget--invalid {
+  border:        1px solid #fca5a5;
+  border-radius: 4px;
+  background:    #fff5f5;
+}
+
+/* Section-title error count badge */
+.sn-section__badge {
+  display:       inline-flex;
+  align-items:   center;
+  justify-content: center;
+  background:    #ef4444;
+  color:         #fff;
+  font-size:     9px;
+  font-weight:   700;
+  line-height:   1;
+  padding:       1px 4px;
+  border-radius: 8px;
+  min-width:     14px;
+  margin-left:   5px;
+}
+
+/* Inline label shown when a required lookup slot has no rows */
+.sn-lookup-empty-label {
+  padding:   3px 12px 2px;
+  font-size: 11px;
+  color:     #ef4444;
 }

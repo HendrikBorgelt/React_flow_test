@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { Handle, NodeResizer, Position, useReactFlow } from '@xyflow/react';
-import { getClassInfo } from '../schema/schemaUtils';
+import { getClassInfo, validateNode } from '../schema/schemaUtils';
 import schema from '../schema/dcat_4c_ap.schema.json';
 import './SchemaNode.css';
 
@@ -16,18 +16,23 @@ function isQuantitativeClass(className) {
 
 // ── Collapsible section title ──────────────────────────────────────────────
 
-function SectionTitle({ label, open, onToggle }) {
+function SectionTitle({ label, open, onToggle, errorCount = 0 }) {
   return (
     <button className="sn-section__title sn-section__title--toggle" onClick={onToggle}>
       <span className={`sn-chevron${open ? ' sn-chevron--open' : ''}`}>▸</span>
       {label}
+      {errorCount > 0 && (
+        <span className="sn-section__badge" title={`${errorCount} required field(s) empty`}>
+          {errorCount}
+        </span>
+      )}
     </button>
   );
 }
 
 // ── PrimitiveField ────────────────────────────────────────────────────────────
 
-function PrimitiveField({ slot, value, onUpdate }) {
+function PrimitiveField({ slot, value, onUpdate, invalid }) {
   const numeric = slot.primitiveType === 'number' || slot.primitiveType === 'integer';
   return (
     <div className="sn-row">
@@ -35,7 +40,7 @@ function PrimitiveField({ slot, value, onUpdate }) {
         {slot.name}{slot.required && <span className="sn-req">*</span>}
       </label>
       <input
-        className="sn-input nodrag nowheel"
+        className={`sn-input nodrag nowheel${invalid ? ' sn-input--invalid' : ''}`}
         type={numeric ? 'number' : 'text'}
         value={value ?? ''}
         placeholder={slot.name}
@@ -47,14 +52,14 @@ function PrimitiveField({ slot, value, onUpdate }) {
 
 // ── EnumField ─────────────────────────────────────────────────────────────────
 
-function EnumField({ slot, value, onUpdate }) {
+function EnumField({ slot, value, onUpdate, invalid }) {
   return (
     <div className="sn-row">
       <label className="sn-label" title={slot.description ?? slot.name}>
-        {slot.name}
+        {slot.name}{slot.required && <span className="sn-req">*</span>}
       </label>
       <select
-        className="sn-select nodrag"
+        className={`sn-select nodrag${invalid ? ' sn-select--invalid' : ''}`}
         value={value ?? ''}
         onChange={e => onUpdate(e.target.value || null)}
       >
@@ -67,7 +72,7 @@ function EnumField({ slot, value, onUpdate }) {
 
 // ── WidgetField ───────────────────────────────────────────────────────────────
 
-function WidgetField({ slot, values, onUpdate }) {
+function WidgetField({ slot, values, onUpdate, invalid }) {
   const rows  = values ?? [];
   const quant = isQuantitativeClass(slot.targetClass);
   const empty = quant
@@ -83,8 +88,10 @@ function WidgetField({ slot, values, onUpdate }) {
     onUpdate(rows.map((r, j) => j === i ? { ...r, ...patch } : r));
 
   return (
-    <div className="sn-widget">
-      <div className="sn-widget__name" title={slot.description ?? ''}>{slot.name}</div>
+    <div className={`sn-widget${invalid && rows.length === 0 ? ' sn-widget--invalid' : ''}`}>
+      <div className="sn-widget__name" title={slot.description ?? ''}>
+        {slot.name}{slot.required && <span className="sn-req">*</span>}
+      </div>
 
       {rows.map((row, i) => (
         <div key={i} className="sn-widget__entry nodrag">
@@ -149,7 +156,7 @@ function WidgetField({ slot, values, onUpdate }) {
 // ── LookupSection ─────────────────────────────────────────────────────────────
 // Renders as bare content (no section wrapper) — caller owns the wrapper.
 
-function LookupSection({ slots, values, onBatchUpdate }) {
+function LookupSection({ slots, values, onBatchUpdate, invalidSlots }) {
   if (!slots.length) return null;
 
   const slotNames = slots.map(s => s.name);
@@ -177,6 +184,19 @@ function LookupSection({ slots, values, onBatchUpdate }) {
 
   return (
     <>
+      {slots.map(s => {
+        const isInvalid = invalidSlots.has(s.name);
+        const slotRows  = rows.filter(r => r.slotName === s.name);
+        return (
+          <div key={s.name}>
+            {isInvalid && slotRows.length === 0 && (
+              <div className="sn-lookup-empty-label">
+                <span className="sn-req">*</span> {s.name} is required
+              </div>
+            )}
+          </div>
+        );
+      })}
       {rows.map((row, i) => (
         <div key={i} className="sn-lookup-row nodrag">
           <input
@@ -227,6 +247,16 @@ export function SchemaNode({ id, data, selected }) {
   const [open, setOpen] = useState({ fields: false, measurements: false, references: false });
   const toggle = key => setOpen(o => ({ ...o, [key]: !o[key] }));
 
+  // ── Validation ────────────────────────────────────────────────────────────
+  const violations   = info ? validateNode(className, values, schema) : [];
+  const invalidNames = new Set(violations.map(v => v.slotName));
+
+  const sectionErrors = {
+    fields:       violations.filter(v => v.section === 'fields').length,
+    measurements: violations.filter(v => v.section === 'measurements').length,
+    references:   violations.filter(v => v.section === 'references').length,
+  };
+
   // ── Position source handles aligned with connection label rows ────────────
   useLayoutEffect(() => {
     if (!connsRef.current || !info?.refSlots.length) return;
@@ -270,8 +300,17 @@ export function SchemaNode({ id, data, selected }) {
         style={{ top: 20 }}
       />
 
+      {/* ── Header ───────────────────────────────────────────────────── */}
       <div className="sn-header">
         <span className="sn-header__title">{info.name}</span>
+        {violations.length > 0 && (
+          <span
+            className="sn-header__badge"
+            title={`${violations.length} required field(s) empty`}
+          >
+            {violations.length}
+          </span>
+        )}
         <button
           className="sn-header__delete nodrag"
           onClick={deleteNode}
@@ -296,14 +335,31 @@ export function SchemaNode({ id, data, selected }) {
         {/* ── Fields (primitives + enums) ──────────────────────────────── */}
         {hasFields && (
           <div className="sn-section">
-            <SectionTitle label="fields" open={open.fields} onToggle={() => toggle('fields')} />
+            <SectionTitle
+              label="fields"
+              open={open.fields}
+              onToggle={() => toggle('fields')}
+              errorCount={sectionErrors.fields}
+            />
             {open.fields && (
               <>
                 {info.primitiveSlots.map(s => (
-                  <PrimitiveField key={s.name} slot={s} value={values[s.name]} onUpdate={v => set(s.name, v)} />
+                  <PrimitiveField
+                    key={s.name}
+                    slot={s}
+                    value={values[s.name]}
+                    onUpdate={v => set(s.name, v)}
+                    invalid={invalidNames.has(s.name)}
+                  />
                 ))}
                 {info.enumSlots.map(s => (
-                  <EnumField key={s.name} slot={s} value={values[s.name]} onUpdate={v => set(s.name, v)} />
+                  <EnumField
+                    key={s.name}
+                    slot={s}
+                    value={values[s.name]}
+                    onUpdate={v => set(s.name, v)}
+                    invalid={invalidNames.has(s.name)}
+                  />
                 ))}
               </>
             )}
@@ -313,9 +369,20 @@ export function SchemaNode({ id, data, selected }) {
         {/* ── Measurements (widget slots) ──────────────────────────────── */}
         {hasMeasure && (
           <div className="sn-section">
-            <SectionTitle label="measurements" open={open.measurements} onToggle={() => toggle('measurements')} />
+            <SectionTitle
+              label="measurements"
+              open={open.measurements}
+              onToggle={() => toggle('measurements')}
+              errorCount={sectionErrors.measurements}
+            />
             {open.measurements && info.widgetSlots.map(s => (
-              <WidgetField key={s.name} slot={s} values={values[s.name]} onUpdate={v => set(s.name, v)} />
+              <WidgetField
+                key={s.name}
+                slot={s}
+                values={values[s.name]}
+                onUpdate={v => set(s.name, v)}
+                invalid={invalidNames.has(s.name)}
+              />
             ))}
           </div>
         )}
@@ -323,9 +390,19 @@ export function SchemaNode({ id, data, selected }) {
         {/* ── References (lookup slots) ────────────────────────────────── */}
         {hasRefs && (
           <div className="sn-section">
-            <SectionTitle label="references" open={open.references} onToggle={() => toggle('references')} />
+            <SectionTitle
+              label="references"
+              open={open.references}
+              onToggle={() => toggle('references')}
+              errorCount={sectionErrors.references}
+            />
             {open.references && (
-              <LookupSection slots={info.lookupSlots} values={values} onBatchUpdate={batchSet} />
+              <LookupSection
+                slots={info.lookupSlots}
+                values={values}
+                onBatchUpdate={batchSet}
+                invalidSlots={invalidNames}
+              />
             )}
           </div>
         )}

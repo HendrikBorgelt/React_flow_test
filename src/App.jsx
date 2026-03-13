@@ -15,10 +15,11 @@ import { NodePalette } from './components/NodePalette';
 import { CanvasControls } from './components/CanvasControls';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { SettingsModal, DEFAULT_SETTINGS } from './components/SettingsModal';
+import { ExportWarning } from './components/ExportWarning';
 import { fromJson } from './loaders/fromJson';
 import { toJson } from './loaders/toJson';
 import { dump as yamlDump, load as yamlLoad } from 'js-yaml';
-import { getClassInfo, isSubtypeOf } from './schema/schemaUtils';
+import { getClassInfo, isSubtypeOf, validateNode } from './schema/schemaUtils';
 import schema from './schema/dcat_4c_ap.schema.json';
 
 const nodeTypes = { schemaNode: SchemaNode };
@@ -56,6 +57,7 @@ const BG_VARIANT_MAP = {
 export default function App() {
   const [welcomeVisible, setWelcomeVisible] = useState(true);
   const [settingsOpen,   setSettingsOpen]   = useState(false);
+  const [exportWarning,  setExportWarning]  = useState(null); // { format, violations }
   const [settings,       setSettings]       = useState(DEFAULT_SETTINGS);
   const [isInteractive,  setIsInteractive]  = useState(true);
   const [minimapOpen,    setMinimapOpen]    = useState(true);
@@ -98,13 +100,21 @@ export default function App() {
     document.body.removeChild(a); URL.revokeObjectURL(url);
   };
 
-  const handleSaveJson = () => {
+  // ── Validation helper — collect violations across all nodes ──────────────
+  const collectViolations = () =>
+    nodes.flatMap(n => {
+      const v = validateNode(n.data.className, n.data.values ?? {}, schema);
+      if (!v.length) return [];
+      return [{ nodeId: n.id, className: n.data.className, slotNames: v.map(x => x.slotName) }];
+    });
+
+  const doSaveJson = () => {
     const data = toJson(nodes, edges, schema);
     if (!data) return;
     triggerDownload(JSON.stringify(data, null, 2), getExportFilename('json'), 'application/json');
   };
 
-  const handleSaveYaml = () => {
+  const doSaveYaml = () => {
     const data = toJson(nodes, edges, schema);
     if (!data) return;
     triggerDownload(
@@ -112,6 +122,18 @@ export default function App() {
       getExportFilename('yaml'),
       'text/yaml',
     );
+  };
+
+  const handleSaveJson = () => {
+    const violations = collectViolations();
+    if (violations.length) { setExportWarning({ format: 'json', violations }); return; }
+    doSaveJson();
+  };
+
+  const handleSaveYaml = () => {
+    const violations = collectViolations();
+    if (violations.length) { setExportWarning({ format: 'yaml', violations }); return; }
+    doSaveYaml();
   };
 
   // ── Shared parser: JSON or YAML → plain object ─────────────────────────────
@@ -268,6 +290,19 @@ export default function App() {
           settings={settings}
           onChange={handleSettingsChange}
           onClose={() => setSettingsOpen(false)}
+        />
+      )}
+
+      {/* ── Export warning modal ───────────────────── */}
+      {exportWarning && (
+        <ExportWarning
+          violations={exportWarning.violations}
+          format={exportWarning.format}
+          onExport={() => {
+            exportWarning.format === 'json' ? doSaveJson() : doSaveYaml();
+            setExportWarning(null);
+          }}
+          onCancel={() => setExportWarning(null)}
         />
       )}
 
