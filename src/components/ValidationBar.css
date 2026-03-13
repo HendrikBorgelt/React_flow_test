@@ -1,0 +1,186 @@
+/* ── Validation Status Bar ─────────────────────────────────────────────────── */
+
+/* Outer anchor — positioned absolutely over the canvas (lives outside ReactFlow) */
+.vb-anchor {
+  position:        absolute;
+  bottom:          18px;
+  left:            50%;
+  transform:       translateX(-50%);
+  z-index:         10;
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  pointer-events:  none;   /* let canvas events through except on the bar itself */
+}
+
+.vb-wrap {
+  position:       relative;
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  pointer-events: auto;
+}
+
+/* ── Shared bar shell ─────────────────────────────────────────────────────── */
+.vb-bar {
+  display:        flex;
+  align-items:    center;
+  gap:            6px;
+  background:     #ffffff;
+  border:         1.5px solid #e2e8f0;
+  border-radius:  20px;
+  padding:        5px 10px;
+  box-shadow:     0 2px 8px rgba(0,0,0,.10);
+  font-family:    ui-sans-serif, system-ui, sans-serif;
+  font-size:      12px;
+  color:          #374151;
+  white-space:    nowrap;
+}
+
+/* ── Valid state ─────────────────────────────────────────────────────────── */
+.vb-bar--valid {
+  color:          #15803d;
+  gap:            6px;
+  pointer-events: auto;
+}
+
+.vb-valid-icon {
+  font-size:   13px;
+  line-height: 1;
+}
+
+/* ── Count pills ─────────────────────────────────────────────────────────── */
+.vb-pill {
+  display:       inline-flex;
+  align-items:   center;
+  padding:       2px 8px;
+  border-radius: 10px;
+  font-size:     11px;
+  font-weight:   600;
+  line-height:   1.4;
+}
+
+.vb-pill--error {
+  background: #fee2e2;
+  color:      #b91c1c;
+}
+
+.vb-pill--opt {
+  background: #fef9c3;
+  color:      #854d0e;
+}
+
+/* ── Thin divider between pills and buttons ──────────────────────────────── */
+.vb-sep {
+  width:      1px;
+  height:     14px;
+  background: #e2e8f0;
+  flex-shrink: 0;
+}
+
+/* ── Icon / action buttons ───────────────────────────────────────────────── */
+.vb-btn {
+  background:    none;
+  border:        none;
+  cursor:        pointer;
+  padding:       2px 6px;
+  border-radius: 4px;
+  font-size:     12px;
+  font-family:   ui-sans-serif, system-ui, sans-serif;
+  color:         #6b7280;
+  line-height:   1.4;
+  transition:    background .1s, color .1s;
+}
+.vb-btn:hover { background: #f3f4f6; color: #374151; }
+
+.vb-btn--active {
+  background: #eff6ff;
+  color:      #3b82f6;
+}
+
+.vb-btn--next {
+  color:       #3b82f6;
+  font-weight: 500;
+}
+.vb-btn--next:hover { background: #eff6ff; color: #2563eb; }
+
+/* ── Detail popover ──────────────────────────────────────────────────────── */
+.vb-popover {
+  position:      absolute;
+  bottom:        calc(100% + 8px);
+  left:          50%;
+  transform:     translateX(-50%);
+  background:    #ffffff;
+  border:        1.5px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow:    0 8px 24px rgba(0,0,0,.14);
+  width:         320px;
+  max-height:    320px;
+  overflow-y:    auto;
+  font-family:   ui-sans-serif, system-ui, sans-serif;
+  font-size:     12px;
+  color:         #374151;
+  z-index:       500;
+
+  /* Arrow pointing down */
+  &::after {
+    content:       '';
+    position:      absolute;
+    top:           100%;
+    left:          50%;
+    transform:     translateX(-50%);
+    border:        6px solid transparent;
+    border-top-color: #e2e8f0;
+  }
+}
+
+.vb-popover__title {
+  padding:        10px 14px 8px;
+  font-size:      11px;
+  font-weight:    700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color:          #9ca3af;
+  border-bottom:  1px solid #f3f4f6;
+}
+
+.vb-popover__section {
+  padding: 8px 0 4px;
+}
+.vb-popover__section + .vb-popover__section {
+  border-top: 1px solid #f3f4f6;
+}
+
+.vb-popover__section-hdr {
+  padding:        2px 14px 4px;
+  font-size:      10px;
+  font-weight:    700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.vb-popover__section-hdr--error { color: #b91c1c; }
+.vb-popover__section-hdr--warn  { color: #854d0e; }
+
+.vb-popover__item {
+  display:        flex;
+  flex-direction: column;
+  gap:            1px;
+  padding:        4px 14px;
+}
+
+.vb-popover__item--muted {
+  color:     #6b7280;
+  font-size: 11px;
+}
+
+.vb-popover__class {
+  font-weight: 600;
+  color:       #374151;
+}
+
+.vb-popover__fields {
+  font-size:   11px;
+  color:       #ef4444;
+  font-family: ui-monospace, monospace;
+  word-break:  break-all;
+}

@@ -16,6 +16,7 @@ import { CanvasControls } from './components/CanvasControls';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { SettingsModal, DEFAULT_SETTINGS } from './components/SettingsModal';
 import { ExportWarning } from './components/ExportWarning';
+import { ValidationBar } from './components/ValidationBar';
 import { fromJson } from './loaders/fromJson';
 import { toJson } from './loaders/toJson';
 import { dump as yamlDump, load as yamlLoad } from 'js-yaml';
@@ -64,7 +65,8 @@ export default function App() {
   const [importError,    setImportError]    = useState(null);
   const [nodes, setNodes] = useState(initialNodes);
   const [edges, setEdges] = useState(initialEdges);
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, fitView } = useReactFlow();
+  const violationCursorRef = useRef(0);
   const fileInputRef = useRef(null);
 
   // ── Welcome / load handlers ────────────────────────────────────────────────
@@ -100,13 +102,24 @@ export default function App() {
     document.body.removeChild(a); URL.revokeObjectURL(url);
   };
 
-  // ── Validation helper — collect violations across all nodes ──────────────
+  // ── Validation helpers ────────────────────────────────────────────────────
   const collectViolations = () =>
     nodes.flatMap(n => {
       const v = validateNode(n.data.className, n.data.values ?? {}, schema);
       if (!v.length) return [];
       return [{ nodeId: n.id, className: n.data.className, slotNames: v.map(x => x.slotName) }];
     });
+
+  // Cycle through nodes that have required-field violations, fitting the view
+  const handleNextViolation = useCallback(() => {
+    const violating = nodes.filter(
+      n => validateNode(n.data.className, n.data.values ?? {}, schema).length > 0
+    );
+    if (!violating.length) return;
+    const idx  = violationCursorRef.current % violating.length;
+    violationCursorRef.current = idx + 1;
+    fitView({ nodes: [{ id: violating[idx].id }], duration: 450, padding: 0.4 });
+  }, [nodes, fitView]);
 
   const doSaveJson = () => {
     const data = toJson(nodes, edges, schema);
@@ -238,7 +251,7 @@ export default function App() {
       />
 
       {/* ── Canvas ─────────────────────────────────── */}
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, position: 'relative' }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -282,6 +295,9 @@ export default function App() {
           )}
 
         </ReactFlow>
+
+        {/* Validation bar — outside ReactFlow to avoid overflow:hidden clipping */}
+        <ValidationBar nodes={nodes} onNext={handleNextViolation} />
       </div>
 
       {/* ── Settings modal ─────────────────────────── */}
