@@ -38,10 +38,8 @@
     nav .nav-links a:hover { background: rgba(255,255,255,.15); }
     nav .nav-links a.active { background: rgba(255,255,255,.2); color: #fff; }
 
-    /* Layout */
     .page { display: flex; margin-top: var(--nav-height); min-height: calc(100vh - var(--nav-height)); }
 
-    /* Sidebar TOC */
     .sidebar {
       width: 240px; flex-shrink: 0;
       background: var(--surface);
@@ -61,7 +59,6 @@
     .toc a:hover { background: var(--primary-light); color: var(--primary-dark); }
     .toc a.sub { padding-left: 22px; font-size: 13px; }
 
-    /* Article */
     article { flex: 1; max-width: 740px; padding: 48px 40px; }
 
     h1 { font-size: 32px; font-weight: 300; color: var(--primary-dark); margin-bottom: 8px; }
@@ -118,7 +115,7 @@
   <a class="nav-brand" href="index.html">⚗️ ChemDCAT-AP Widget</a>
   <div class="nav-links">
     <a href="index.html">Home</a>
-    <a href="widget.html">Try it</a>
+    <a href="widget-page.html">Try it</a>
     <a href="howto.html" class="active">How-to</a>
     <a href="https://github.com/HendrikBorgelt/React_flow_test" target="_blank">GitHub ↗</a>
   </div>
@@ -137,8 +134,8 @@
       <li><a href="#quant" class="sub">Quantitative</a></li>
       <li><a href="#qual" class="sub">Qualitative</a></li>
       <li><a href="#import-export">Import / Export</a></li>
-      <li><a href="#json-format">JSON format</a></li>
-      <li><a href="#yaml-format">YAML format</a></li>
+      <li><a href="#json-format" class="sub">JSON format</a></li>
+      <li><a href="#yaml-format" class="sub">YAML format</a></li>
       <li><a href="#linkml">Using with LinkML</a></li>
       <li><a href="#embed">Embedding</a></li>
     </ul>
@@ -148,17 +145,14 @@
     <h1>How-to Guide</h1>
     <p style="color:#616161;font-size:14px;">ChemDCAT-AP Widget · interactive metadata editor</p>
 
-    <!-- ─── Overview ─── -->
     <h2 id="overview">Overview</h2>
     <p>The ChemDCAT-AP Widget is a browser-based, schema-driven metadata editor. It turns LinkML class definitions from the <strong>dcat-4C-ap</strong> schema into interactive node cards on a canvas. You connect nodes, fill in field values, and export the result as a valid <strong>LinkML instance document</strong> (JSON or YAML).</p>
     <p>No installation required — it runs entirely in the browser.</p>
-
     <div class="callout">
       <strong>LinkML round-trip</strong>
       The exported JSON/YAML is compatible with LinkML generators (<code>linkml-convert</code>, <code>gen-jsonld</code>, <code>gen-rdf</code>, etc.). You can also re-import a saved file to continue editing.
     </div>
 
-    <!-- ─── Canvas ─── -->
     <h2 id="canvas">The Canvas</h2>
 
     <h3 id="nodes">Schema nodes</h3>
@@ -176,7 +170,6 @@
     <h3 id="connections">Connecting nodes</h3>
     <p>Reference slots are shown as <strong>connection handles</strong> (dots) on node edges. Drag from a source handle to a target node to create a relationship. The edge label shows which slot the connection represents (e.g. <code>has_sample</code>).</p>
 
-    <!-- ─── Measurements ─── -->
     <h2 id="measurements">Measurements</h2>
 
     <h3 id="quant">Quantitative attributes</h3>
@@ -207,11 +200,10 @@
     <h3 id="qual">Qualitative attributes</h3>
     <p>Qualitative slots (e.g. <code>has_qualitative_attribute</code>) only have a <strong>title</strong> and a <strong>value</strong> field — no unit or quantity type.</p>
 
-    <!-- ─── Import / Export ─── -->
     <h2 id="import-export">Import / Export</h2>
 
     <h3 id="json-format">JSON export</h3>
-    <p>Click <strong>↓ JSON</strong> in the toolbar. The downloaded file is a <strong>LinkML instance JSON</strong> document. It uses <code>@type</code> for class names and slot names as keys:</p>
+    <p>Click <strong>↓ JSON</strong> in the toolbar. The downloaded file is a <strong>LinkML instance JSON</strong> document using <code>@type</code> for class names and slot names as keys:</p>
     <pre><code>{
   "@type": "MaterialSample",
   "id": "ms-001",
@@ -227,7 +219,7 @@
 }</code></pre>
 
     <h3 id="yaml-format">YAML export</h3>
-    <p>Click <strong>↓ YAML</strong> for the same content as YAML. This is often preferred as input to LinkML CLI tools:</p>
+    <p>Click <strong>↓ YAML</strong> for the same content as YAML — often preferred as input for LinkML CLI tools:</p>
     <pre><code>"@type": MaterialSample
 id: ms-001
 name: Catalyst powder
@@ -237,7 +229,6 @@ has_mass:
     unit: https://qudt.org/vocab/unit/MilliGM
     has_quantity_type: http://qudt.org/vocab/quantitykind/Mass</code></pre>
 
-    <!-- ─── LinkML ─── -->
     <h2 id="linkml">Using the export with LinkML</h2>
     <p>After exporting, use standard LinkML tools to convert or validate the instance document:</p>
     <pre><code># Convert to JSON-LD
@@ -252,17 +243,15 @@ linkml-convert -s dcat_4c_ap.yaml -t ttl my-export.yaml</code></pre>
       The schema YAML used by the widget is bundled at <code>src/schema/dcat_4c_ap.schema.json</code>. It is compiled from the LinkML source at <a href="https://github.com/nfdi-de/chem-dcat-ap" target="_blank">nfdi-de/chem-dcat-ap</a>.
     </div>
 
-    <!-- ─── Embedding ─── -->
     <h2 id="embed">Embedding the widget</h2>
     <p>The widget is deployed as a static web app and can be embedded in any HTML page via <code>&lt;iframe&gt;</code>:</p>
     <pre><code>&lt;iframe
-  src="https://hendrikborgelt.github.io/React_flow_test/"
+  src="https://hendrikborgelt.github.io/React_flow_test/widget/"
   width="100%"
   height="700px"
   style="border:none; border-radius:8px;"
   title="ChemDCAT-AP metadata widget"
 &gt;&lt;/iframe&gt;</code></pre>
-    <p>Because both pages are served from <code>github.io</code> (same origin) there are no cross-origin restrictions for file downloads initiated within the iframe.</p>
 
   </article>
 </div>

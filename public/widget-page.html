@@ -10,7 +10,6 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --primary: #00796b;
-      --primary-dark: #004c40;
       --nav-height: 56px;
     }
     body { font-family: 'Roboto', sans-serif; background: #1a1a2e; }
@@ -49,7 +48,6 @@
       display: block;
     }
 
-    /* Fallback bar at the bottom */
     .bottom-bar {
       position: fixed; bottom: 0; left: 0; right: 0;
       background: rgba(0,0,0,.7);
@@ -68,7 +66,7 @@
   <a class="nav-brand" href="index.html">⚗️ ChemDCAT-AP Widget</a>
   <div class="nav-links">
     <a href="index.html">Home</a>
-    <a href="widget.html" class="active">Try it</a>
+    <a href="widget-page.html" class="active">Try it</a>
     <a href="howto.html">How-to</a>
     <a href="https://github.com/HendrikBorgelt/React_flow_test" target="_blank">GitHub ↗</a>
   </div>
@@ -76,7 +74,7 @@
 
 <div class="iframe-wrapper">
   <iframe
-    src="../index.html"
+    src="widget/"
     title="ChemDCAT-AP metadata widget"
     allow="downloads"
   ></iframe>
@@ -84,7 +82,7 @@
 
 <div class="bottom-bar">
   <span>Widget running in iframe</span>
-  <a href="../index.html" target="_blank">Open full screen ↗</a>
+  <a href="widget/" target="_blank">Open full screen ↗</a>
 </div>
 
 </body>
