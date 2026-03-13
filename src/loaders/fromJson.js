@@ -277,9 +277,18 @@ export function fromJson(json, schema, { maxDepth = 3 } = {}) {
     return rfId;
   }
 
-  // ── Build tree ─────────────────────────────────────────────────────────
-  const className = json['@type'];
-  if (!className) throw new Error('JSON instance is missing the @type field.');
+  // ── Resolve root class ─────────────────────────────────────────────────
+  // 1. @type  — our own JSON-LD export format
+  // 2. type   — standard LinkML native YAML/JSON format
+  // 3. infer  — score all node classes against the object's keys (best match)
+  const className =
+    (typeof json['@type'] === 'string' ? json['@type'] : null) ??
+    (typeof json['type']  === 'string' ? json['type']  : null) ??
+    inferClass(json, [...nodeClassSet], schema, nodeClassSet);
+
+  if (!className) throw new Error(
+    'Could not determine the root class. Add a "@type" or "type" field with the LinkML class name.'
+  );
   const rootId = process(json, className, 0);
 
   // ── Layout ─────────────────────────────────────────────────────────────
