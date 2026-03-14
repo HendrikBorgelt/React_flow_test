@@ -20,7 +20,7 @@
  * Options:
  *   maxDepth {number}  – how many levels of ref-slot expansion to perform (default 3)
  */
-import { getClassInfo, listNodeClasses } from '../schema/schemaUtils';
+import { getClassInfo, listNodeClasses, isSubtypeOf } from '../schema/schemaUtils';
 
 // ── Layout constants ───────────────────────────────────────────────────────
 const X_STEP      = 580;  // horizontal pixels between depth levels
@@ -137,9 +137,24 @@ function extractValues(obj, info) {
 
 // ── Infer class for embedded objects without @type ─────────────────────────
 // Score each candidate by how many of the object's keys are known slots.
+//
+// When the slot's targetClasses list contains only abstract classes (not present
+// in nodeClassSet because they have `abstract: true`), we expand to all concrete
+// node classes that are structural subtypes of those abstract bases.  This
+// handles the common pattern where a slot is typed as DataGeneratingActivity
+// but the actual embedded object is a Characterization, Synthesis, etc.
 function inferClass(obj, targetClasses, schema, nodeClassSet) {
   // Prefer concrete classes (those that appear as node classes in the palette)
-  const candidates = targetClasses.filter(c => nodeClassSet.has(c));
+  let candidates = targetClasses.filter(c => nodeClassSet.has(c));
+
+  // If no direct concrete matches, check if targetClasses are abstract bases
+  // and expand them to all concrete node classes that inherit from them.
+  if (!candidates.length && targetClasses.length) {
+    candidates = [...nodeClassSet].filter(nc =>
+      targetClasses.some(tc => isSubtypeOf(nc, tc, schema))
+    );
+  }
+
   const pool = candidates.length ? candidates : targetClasses;
   if (!pool.length) return null;
   if (pool.length === 1) return pool[0];

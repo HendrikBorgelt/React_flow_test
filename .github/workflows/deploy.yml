@@ -32,24 +32,36 @@ jobs:
       - name: Install LinkML
         run: pip install linkml
 
+      # ── Redirect network imports to local DCAT-AP+ copy ─────────────────────
+      # Several schema files import `dcatapplus:latest/schema/dcat_ap_plus` which
+      # expands to https://w3id.org/nfdi-de/dcat-ap-plus/ (a 303 redirect).
+      # CI has no network access for schema resolution, so we patch all affected
+      # YAML files in-place to use the local copy at schemas/dcat_ap_plus/.
+      # The checkout is ephemeral; these modifications are never committed.
+      - name: Patch network imports → local DCAT-AP+ schema
+        run: |
+          find schemas -name "*.yaml" \
+            -exec sed -i \
+              's|dcatapplus:latest/schema/dcat_ap_plus|../../dcat_ap_plus/schema/dcat_ap_plus|g' \
+              {} +
+          echo "Patched files:"
+          grep -rn "dcat_ap_plus" schemas --include="*.yaml" | grep "import\|  -" | head -20
+
       # ── Compile JSON schemas from LinkML YAML sources ───────────────────────
       - name: Compile chem-dcat-ap schema
         run: |
           gen-json-schema schemas/chem_dcat_ap/schema/chem_dcat_ap.yaml \
             > src/schema/dcat_4c_ap.schema.json
-        continue-on-error: true   # keep existing compiled file if compilation fails
 
       - name: Compile CoreMeta4Cat schema
         run: |
           gen-json-schema schemas/coremeta4cat/schema/coremeta4cat.yaml \
             > src/schema/coremeta4cat.schema.json
-        continue-on-error: true
 
       - name: Compile DCAT-AP+ schema
         run: |
           gen-json-schema schemas/dcat_ap_plus/schema/dcat_ap_plus.yaml \
             > src/schema/dcat_ap_plus.schema.json
-        continue-on-error: true
 
       # ── Install JS dependencies ─────────────────────────────────────────────
       - run: npm ci
