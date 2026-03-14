@@ -144,22 +144,45 @@ function extractValues(obj, info) {
 // handles the common pattern where a slot is typed as DataGeneratingActivity
 // but the actual embedded object is a Characterization, Synthesis, etc.
 function inferClass(obj, targetClasses, schema, nodeClassSet) {
+  const defs = schema.$defs ?? {};
+
   // Prefer concrete classes (those that appear as node classes in the palette)
   let candidates = targetClasses.filter(c => nodeClassSet.has(c));
 
-  // If no direct concrete matches, check if targetClasses are abstract bases
-  // and expand them to all concrete node classes that inherit from them.
+  // If no direct concrete matches, check if targetClasses are abstract bases.
+  // Two-pass expansion:
+  //   Pass 1 – structural: find all node classes whose property set is a
+  //             superset of each targetClass (works when targetClass IS in $defs)
+  //   Pass 2 – scope: if the targetClass is NOT in $defs (LinkML marks it
+  //             abstract so gen-json-schema omits it), fall back to all node
+  //             classes that share a common slot from the embedded object.
   if (!candidates.length && targetClasses.length) {
-    candidates = [...nodeClassSet].filter(nc =>
-      targetClasses.some(tc => isSubtypeOf(nc, tc, schema))
+    // Pass 1 – structural subtype check (parent must be in $defs)
+    const structural = [...nodeClassSet].filter(nc =>
+      targetClasses.some(tc => defs[tc] && isSubtypeOf(nc, tc, schema))
     );
+    if (structural.length) {
+      candidates = structural;
+    } else {
+      // Pass 2 – targetClass missing from $defs (abstract, omitted by compiler).
+      // Score all nodeClassSet members against the object's keys; keep any that
+      // have at least one matching property.
+      const objKeys = new Set(Object.keys(obj));
+      candidates = [...nodeClassSet].filter(nc => {
+        const props = defs[nc]?.properties;
+        return props && Object.keys(props).some(k => objKeys.has(k));
+      });
+    }
   }
 
-  const pool = candidates.length ? candidates : targetClasses;
+  // Build the final candidate pool.
+  // Never return a class that isn't in $defs — that would produce an
+  // "Unknown class" node with no slots.
+  let pool = candidates.length ? candidates : targetClasses;
+  pool = pool.filter(c => c in defs);
   if (!pool.length) return null;
   if (pool.length === 1) return pool[0];
 
-  const defs = schema.$defs ?? {};
   let best = pool[0], bestScore = -1;
   for (const tc of pool) {
     const def = defs[tc];
@@ -225,11 +248,13 @@ function layoutSubtree(rfId, depth, yStart, nodeMap, visited = new Set()) {
  * @param {object} json          – parsed JSON-LD instance (must have `@type`)
  * @param {object} schema        – parsed dcat_4c_ap.schema.json
  * @param {object} [options]
- * @param {number} [options.maxDepth=3]  – max ref-slot expansion depth
+ * @param {number}   [options.maxDepth=3]       – max ref-slot expansion depth
+ * @param {string[]} [options.abstractClasses=[]] – class names to treat as
+ *   abstract (excluded from the concrete node class set used for inference)
  * @returns {{ nodes: Node[], edges: Edge[] }}
  */
-export function fromJson(json, schema, { maxDepth = 3 } = {}) {
-  const nodeClassSet = new Set(listNodeClasses(schema));
+export function fromJson(json, schema, { maxDepth = 3, abstractClasses = [] } = {}) {
+  const nodeClassSet = new Set(listNodeClasses(schema, abstractClasses));
 
   // Internal tree nodes — will be converted to RF nodes after layout
   // { rfId, className, values, position, childRefs: [{slotName, rfId}] }

@@ -8,18 +8,21 @@
   ],
   "was_generated_by": [
     {
+      "@type": "Synthesis",
       "id": "coremeta4cat:SYNTH_001_Pt_Al2O3",
       "title": [
         "incipient wetness impregnation of Cu/ZnO/Al2O3"
       ]
     },
     {
+      "@type": "Characterization",
       "id": "coremeta4cat:CHAR_001_BET_CuZnO_Al2O3",
       "title": [
         "BET surface area measurement of Cu/ZnO/Al2O3"
       ]
     },
     {
+      "@type": "Characterization",
       "id": "coremeta4cat:CHAR_002_XRD_CuZnO_Al2O3",
       "title": [
         "Powder XRD measurement of Cu/ZnO/Al2O3"
@@ -28,6 +31,7 @@
   ],
   "is_about_entity": [
     {
+      "@type": "CatalystSample",
       "id": "coremeta4cat:CAT_001_CuZnO_Al2O3",
       "title": "Cu/ZnO/Al2O3 methanol synthesis catalyst",
       "description": "63 wt% CuO, 24 wt% ZnO, 13 wt% Al2O3 (calcined precursor)"

@@ -14,11 +14,22 @@ import schema   from '../schema/dcat_ap_plus.schema.json';
 import dsJson   from '../examples/dcat-ap-plus/Dataset-001.json';
 import adsJson  from '../examples/dcat-ap-plus/AnalysisDataset-001.json';
 
+// ── Abstract / infrastructure classes to hide from the node palette ──────────
+// gen-json-schema does NOT emit `abstract: true`, so we list them explicitly.
+// DCAT-AP+ base hierarchy (shared infrastructure, never directly instantiated):
+const DCAT_AP_ABSTRACT = [
+  'Activity', 'Agent', 'AgenticEntity',
+  'DataGeneratingActivity',
+  'Entity', 'EvaluatedActivity', 'EvaluatedEntity',
+  'Kind', 'Plan',
+];
+
 export const config = {
   appTitle:    'Schema Graph Editor',
   appSubtitle: 'DCAT-AP+ visual instance editor',
   githubUrl:   'https://github.com/nfdi-de/dcat-ap-plus',
   schema,
+  abstractClasses: [...DCAT_AP_ABSTRACT],
   examples: [
     {
       json:  dsJson,

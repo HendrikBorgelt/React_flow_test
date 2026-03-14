@@ -21,7 +21,7 @@ export function WelcomeScreen({ config, onNew, onLoad }) {
   const tryLoad = (json, label) => {
     setError(null);
     try {
-      onLoad(fromJson(json, schema));
+      onLoad(fromJson(json, schema, { abstractClasses: config.abstractClasses }));
     } catch (err) {
       setError({ label, message: err.message, stack: err.stack });
     }

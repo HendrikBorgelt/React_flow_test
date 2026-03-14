@@ -2,6 +2,7 @@
   "id": "coremeta4cat:REAC_001_CO2_hydrogenation",
   "had_input_entity": [
     {
+      "@type": "Precursor",
       "id": "coremeta4cat:FEED_001_CO2_H2",
       "title": "CO2/H2 feed gas mixture",
       "description": "H2/CO2 molar ratio 3:1, total flow 100 mL/min"
@@ -9,6 +10,7 @@
   ],
   "carried_out_by": [
     {
+      "@type": "FixedBedReactor",
       "id": "coremeta4cat:REACT_001_FixedBed",
       "title": "stainless steel fixed-bed plug-flow reactor",
       "description": "10 mm inner diameter, 30 cm length, 0.5 g catalyst diluted with SiC"
@@ -23,6 +25,7 @@
   ],
   "product_identification_method": [
     {
+      "@type": "ProductIdentificationMethod",
       "title": "online gas chromatography",
       "description": "GC (Agilent 7890B) with TCD and FID detectors; columns: Molecular Sieve 5A and Poraplot Q; products: MeOH, CO, CH4, H2O quantified"
     }

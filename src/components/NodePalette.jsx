@@ -27,7 +27,7 @@ export function NodePalette({
   const [classesOpen, setClassesOpen] = useState(true);
   const [search, setSearch] = useState('');
 
-  const classes  = useMemo(() => listNodeClasses(schema), []);
+  const classes  = useMemo(() => listNodeClasses(schema, config.abstractClasses), []);
   const filtered = useMemo(
     () => classes.filter(c => c.toLowerCase().includes(search.toLowerCase())),
     [classes, search]

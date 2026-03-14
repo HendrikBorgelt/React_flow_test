@@ -15,11 +15,41 @@ import rxnJson  from '../examples/coremeta4cat/Reaction-001.json';
 import synthJson from '../examples/coremeta4cat/Synthesis-001.json';
 import dsJson   from '../examples/coremeta4cat/CatalysisDataset-001.json';
 
+// ── Abstract / infrastructure classes to hide from the node palette ──────────
+// gen-json-schema does NOT emit `abstract: true`, so we list them explicitly.
+// DCAT-AP+ base hierarchy (shared infrastructure, never directly instantiated):
+const DCAT_AP_BASE = [
+  'Activity', 'Agent', 'AgenticEntity',
+  'DataGeneratingActivity',
+  'Entity', 'EvaluatedActivity', 'EvaluatedEntity',
+  'Kind', 'Plan',
+];
+// DCAT catalog / administrative infrastructure (not catalysis domain nodes):
+const DCAT_ADMIN = [
+  'Catalogue', 'CatalogueRecord', 'Checksum',
+  'DataService', 'DatasetSeries',
+  'Distribution', 'LicenseDocument',
+  'PeriodOfTime', 'Relationship',
+];
+// CoreMeta4Cat-specific abstract base classes (abstract: true in source YAML):
+const COREMETA_ABSTRACT = [
+  'CharacterizationTechnique', // abstract base → concrete techniques (XRD, BET, etc.)
+  'PreparationMethod',          // abstract base → Impregnation, CoPrecipitation, etc.
+  'ReactorDesignType',          // abstract base → FixedBedReactor, etc.
+  'SimulationMethod',           // abstract base → DFT, MolecularDynamics, etc.
+  'CalculatedProperty',         // abstract base → ThermodynamicStability, etc.
+  // DCAT-AP+ material/entity abstract bases:
+  'Device',                     // abstract AgenticEntity base
+  'MaterialEntity',             // abstract material base
+  'ChemicalEntity',             // abstract chemical entity base
+];
+
 export const config = {
   appTitle:    'Schema Graph Editor',
   appSubtitle: 'CoreMeta4Cat visual instance editor',
   githubUrl:   'https://github.com/nfdi4cat/CoreMeta4Cat',
   schema,
+  abstractClasses: [...DCAT_AP_BASE, ...DCAT_ADMIN, ...COREMETA_ABSTRACT],
   examples: [
     {
       json:  rxnJson,

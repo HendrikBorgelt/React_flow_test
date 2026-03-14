@@ -208,24 +208,26 @@ export function getInlineClasses(schema) {
 }
 
 /**
- * List all concrete (non-enum, non-inline, non-abstract) class names —
- * i.e. the classes that should appear as top-level graph nodes in the palette.
+ * List all concrete (non-enum, non-inline) class names that should appear
+ * as top-level graph nodes in the palette.
  *
- * LinkML's `gen-json-schema` preserves the `abstract: true` annotation on
- * classes that are declared `abstract: true` in the LinkML source.  We use
- * this to filter out base/mixin classes (DataGeneratingActivity, Plan,
- * CharacterizationTechnique, PreparationMethod, …) that should never be
- * instantiated directly.
+ * @param {object}   schema          – parsed JSON Schema document
+ * @param {string[]} [abstractClasses=[]] – class names to exclude from the
+ *   palette.  Use this to hide infrastructure/abstract base classes that
+ *   `gen-json-schema` emits without the `abstract` flag (e.g.
+ *   DataGeneratingActivity, Plan, PreparationMethod, ReactorDesignType …).
+ *   Provide via config.abstractClasses in each schema's config file.
  */
-export function listNodeClasses(schema) {
+export function listNodeClasses(schema, abstractClasses = []) {
   const defs    = schema.$defs ?? {};
   const inline  = buildInlineClassSet(defs);
   const lookups = buildLookupClassSet(defs);
+  const exclude = new Set(abstractClasses);
   return Object.entries(defs)
     .filter(([name, def]) =>
       !Array.isArray(def.enum) &&
       def.type === 'object' &&
-      def.abstract !== true &&       // skip LinkML abstract classes
+      !exclude.has(name) &&
       !inline.has(name) &&
       !lookups.has(name)
     )
