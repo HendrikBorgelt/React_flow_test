@@ -1,0 +1,211 @@
+/* ── GhostNode — shared tokens ──────────────────────────────────────────────── */
+:root {
+  --gn-accent:  #3b82f6;
+  --gn-border:  #cbd5e1;   /* muted, dashed — clearly temporary */
+  --gn-bg:      #ffffff;
+  --gn-header:  #64748b;   /* slate — distinct from SchemaNode blue header */
+  --gn-fg:      #ffffff;
+  --gn-text:    #374151;
+  --gn-muted:   #9ca3af;
+  --gn-font:    ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ── Class-box ───────────────────────────────────────────────────────────────── */
+
+.gn-box {
+  background:    var(--gn-bg);
+  border:        1.5px dashed var(--gn-border);
+  border-radius: 8px;
+  box-shadow:    0 1px 4px rgba(0,0,0,.07), 0 4px 16px rgba(0,0,0,.06);
+  min-width:     260px;
+  max-width:     320px;
+  font-size:     12px;
+  font-family:   var(--gn-font);
+  color:         var(--gn-text);
+  display:       flex;
+  flex-direction: column;
+  overflow:      hidden;
+}
+
+/* Header — slate colour to distinguish from blue SchemaNode headers */
+.gn-box__header {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  background:      var(--gn-header);
+  color:           var(--gn-fg);
+  padding:         6px 8px 6px 12px;
+  border-radius:   6px 6px 0 0;
+  gap:             8px;
+  cursor:          grab;
+}
+.gn-box__slot {
+  font-size:      11px;
+  font-weight:    700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  opacity:        .9;
+  flex:           1;
+  overflow:       hidden;
+  text-overflow:  ellipsis;
+  white-space:    nowrap;
+}
+
+.gn-box__dismiss {
+  background:    none;
+  border:        none;
+  cursor:        pointer;
+  color:         rgba(255,255,255,.7);
+  font-size:     16px;
+  line-height:   1;
+  padding:       0 2px;
+  border-radius: 50%;
+  flex-shrink:   0;
+  margin-right:  12px;  /* keep clear of the right handle dot */
+  transition:    color .12s, background .12s;
+}
+.gn-box__dismiss:hover {
+  color:      #fff;
+  background: rgba(239,68,68,.6);
+}
+
+/* Search input */
+.gn-box__search-wrap {
+  padding: 8px 8px 4px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.gn-box__search {
+  width:         100%;
+  box-sizing:    border-box;
+  border:        1px solid var(--gn-border);
+  border-radius: 5px;
+  padding:       4px 8px;
+  font-size:     11px;
+  font-family:   var(--gn-font);
+  outline:       none;
+  background:    #f8fafc;
+  color:         var(--gn-text);
+  transition:    border-color .15s;
+}
+.gn-box__search:focus {
+  border-color: var(--gn-accent);
+  background:   #fff;
+}
+
+/* Scrollable body */
+.gn-box__body {
+  overflow-y: auto;
+  max-height: 260px;
+  padding:    4px 0 6px;
+}
+
+/* Section */
+.gn-box__section {
+  padding: 4px 0 2px;
+}
+.gn-box__section + .gn-box__section {
+  border-top: 1px solid #f1f5f9;
+}
+.gn-box__section-title {
+  font-size:      9px;
+  font-weight:    700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color:          var(--gn-muted);
+  padding:        4px 12px 2px;
+}
+
+.gn-box__section-title--toggle {
+  display:         flex;
+  justify-content: space-between;
+  align-items:     center;
+  cursor:          pointer;
+  padding-right:   10px;
+  user-select:     none;
+}
+.gn-box__section-title--toggle:hover {
+  color: var(--gn-text);
+}
+
+.gn-box__chevron {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.gn-box__peek-more {
+  padding:    3px 12px 4px 26px;
+  font-size:  10px;
+  color:      var(--gn-muted);
+  cursor:     pointer;
+  font-style: italic;
+}
+.gn-box__peek-more:hover {
+  color: var(--gn-accent);
+}
+
+/* Items */
+.gn-box__item {
+  display:     flex;
+  align-items: center;
+  gap:         7px;
+  width:       100%;
+  background:  none;
+  border:      none;
+  padding:     5px 12px;
+  cursor:      pointer;
+  text-align:  left;
+  font-size:   11px;
+  font-family: var(--gn-font);
+  color:       var(--gn-text);
+  transition:  background .1s;
+}
+.gn-box__item:hover {
+  background: #f0f9ff;
+}
+
+.gn-box__dot {
+  width:         7px;
+  height:        7px;
+  border-radius: 50%;
+  flex-shrink:   0;
+}
+.gn-box__dot--existing { background: #22c55e; }
+.gn-box__dot--new      { background: var(--gn-accent); }
+
+.gn-box__item-label {
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  white-space:   nowrap;
+}
+
+.gn-box__empty {
+  padding:   6px 12px;
+  font-size: 11px;
+  color:     var(--gn-muted);
+  font-style: italic;
+}
+
+/* ── Handles (shared by pill and box) ────────────────────────────────────────── */
+
+/* Left (target) — ghost edge connects here; invisible */
+.react-flow__handle.gn-handle--in {
+  width:          8px;
+  height:         8px;
+  border-radius:  50%;
+  background:     var(--gn-border);
+  border:         2px solid #fff;
+  opacity:        0;
+  pointer-events: none;
+}
+
+/* Right (source) — drag from here to connect to an existing node */
+.react-flow__handle.gn-handle--out {
+  width:         10px;
+  height:        10px;
+  border-radius: 50%;
+  background:    var(--gn-accent);
+  border:        2px solid #fff;
+  box-shadow:    0 0 0 1px var(--gn-accent);
+  z-index:       3;
+}
+

@@ -1,0 +1,150 @@
+/* ── ConnectionMenu ────────────────────────────────────────────────────────
+   Floating popover shown when a ref-slot handle is clicked.
+   Uses position:fixed so it sits above the React Flow canvas.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.cm-panel {
+  position:      fixed;
+  z-index:       1000;
+  width:         260px;
+  background:    #ffffff;
+  border:        1.5px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow:    0 4px 24px rgba(0,0,0,.13), 0 1px 4px rgba(0,0,0,.07);
+  font-family:   ui-sans-serif, system-ui, sans-serif;
+  font-size:     12px;
+  color:         #374151;
+  display:       flex;
+  flex-direction: column;
+  max-height:    420px;
+  overflow:      hidden;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.cm-header {
+  display:       flex;
+  align-items:   center;
+  justify-content: space-between;
+  padding:       7px 10px 6px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  flex-shrink:   0;
+}
+
+.cm-header__title {
+  font-size:   12px;
+  font-weight: 600;
+  color:       #1e293b;
+  letter-spacing: .01em;
+}
+
+.cm-close {
+  background:    none;
+  border:        none;
+  cursor:        pointer;
+  color:         #9ca3af;
+  font-size:     16px;
+  line-height:   1;
+  padding:       1px 4px;
+  border-radius: 3px;
+}
+.cm-close:hover { background: #f3f4f6; color: #374151; }
+
+/* ── Search input ─────────────────────────────────────────────────────────── */
+.cm-search-wrap {
+  padding:     6px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  flex-shrink: 0;
+}
+
+.cm-search {
+  width:         100%;
+  box-sizing:    border-box;
+  border:        1px solid #e2e8f0;
+  border-radius: 5px;
+  padding:       5px 9px;
+  font-size:     12px;
+  outline:       none;
+  color:         #374151;
+  background:    #f8fafc;
+}
+.cm-search:focus {
+  border-color: #3b82f6;
+  background:   #fff;
+}
+
+/* ── Scrollable body ─────────────────────────────────────────────────────── */
+.cm-body {
+  overflow-y:  auto;
+  flex:        1;
+  min-height:  0;
+}
+
+/* ── Section ──────────────────────────────────────────────────────────────── */
+.cm-section {
+  padding: 4px 0 2px;
+}
+.cm-section + .cm-section {
+  border-top: 1px solid #f1f5f9;
+}
+
+.cm-section__title {
+  padding:        4px 14px 3px;
+  font-size:      10px;
+  font-weight:    700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color:          #9ca3af;
+}
+
+/* ── Item buttons ─────────────────────────────────────────────────────────── */
+.cm-item {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  width:       100%;
+  padding:     5px 14px;
+  background:  none;
+  border:      none;
+  cursor:      pointer;
+  text-align:  left;
+  font-size:   12px;
+  color:       #374151;
+  font-family: inherit;
+}
+.cm-item:hover {
+  background: #f0f7ff;
+  color:      #1d4ed8;
+}
+
+.cm-item__dot {
+  flex-shrink:   0;
+  width:         8px;
+  height:        8px;
+  border-radius: 50%;
+}
+.cm-item__dot--existing { background: #22c55e; }
+.cm-item__dot--new      { background: #3b82f6; border: 1.5px solid #3b82f6; background: none; }
+
+.cm-item__label {
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.cm-empty {
+  padding:   6px 14px 8px;
+  color:     #9ca3af;
+  font-size: 11px;
+  font-style: italic;
+}
+
+/* ── Footer hint ──────────────────────────────────────────────────────────── */
+.cm-hint {
+  padding:       6px 14px 8px;
+  font-size:     10px;
+  color:         #9ca3af;
+  border-top:    1px solid #f1f5f9;
+  flex-shrink:   0;
+  line-height:   1.4;
+}

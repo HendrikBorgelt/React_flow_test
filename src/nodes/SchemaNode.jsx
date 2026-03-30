@@ -1,6 +1,8 @@
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Handle, NodeResizer, Position, useReactFlow } from '@xyflow/react';
 import { getClassInfo, validateNode } from '../schema/schemaUtils';
+import { useActiveHandle } from '../shared/ActiveHandleContext';
+import { generateDisplayName } from '../utils/nodeNames';
 import { config } from '~config';
 const { schema } = config;
 import './SchemaNode.css';
@@ -226,6 +228,60 @@ function LookupSection({ slots, values, onBatchUpdate, invalidSlots }) {
   );
 }
 
+// ── HeaderAlias — inline-editable provisional display name ────────────────────
+
+function HeaderAlias({ id, displayName, updateNodeData }) {
+  const [editing, setEditing] = useState(false);
+  const [draft,   setDraft]   = useState('');
+  const inputRef = useRef(null);
+
+  const startEdit = useCallback((e) => {
+    e.stopPropagation();
+    setDraft(displayName ?? '');
+    setEditing(true);
+  }, [displayName]);
+
+  useLayoutEffect(() => {
+    if (editing) inputRef.current?.select();
+  }, [editing]);
+
+  const commit = useCallback(() => {
+    updateNodeData(id, { displayName: draft.trim() });
+    setEditing(false);
+  }, [id, draft, updateNodeData]);
+
+  const onKeyDown = useCallback((e) => {
+    e.stopPropagation(); // prevent React Flow from swallowing keys
+    if (e.key === 'Enter')  { e.preventDefault(); commit(); }
+    if (e.key === 'Escape') { setEditing(false); }
+  }, [commit]);
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        className="sn-header__alias-input nodrag nowheel"
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={onKeyDown}
+        placeholder="label…"
+        size={Math.max(draft.length, 6) + 1}
+      />
+    );
+  }
+
+  return (
+    <span
+      className={`sn-header__alias nodrag${displayName ? '' : ' sn-header__alias--empty'}`}
+      onClick={startEdit}
+      title="Click to set a provisional display name"
+    >
+      {displayName ? `{${displayName}}` : '{…}'}
+    </span>
+  );
+}
+
 // ── SchemaNode ────────────────────────────────────────────────────────────────
 
 export function SchemaNode({ id, data, selected }) {
@@ -247,6 +303,13 @@ export function SchemaNode({ id, data, selected }) {
 
   const [open, setOpen] = useState({ fields: false, measurements: false, references: false });
   const toggle = key => setOpen(o => ({ ...o, [key]: !o[key] }));
+
+  // ── Auto display-name: assign on first mount if node has none ─────────────
+  useEffect(() => {
+    if (!data.displayName) {
+      updateNodeData(id, { displayName: generateDisplayName(className) });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Validation ────────────────────────────────────────────────────────────
   const violations   = info ? validateNode(className, values, schema) : [];
@@ -273,6 +336,12 @@ export function SchemaNode({ id, data, selected }) {
     );
   });
 
+  // ── Guided-connection context ─────────────────────────────────────────────
+  const connCtx = useActiveHandle();
+  const isActiveSource     = connCtx?.activeHandle?.nodeId === id;
+  const isCompatibleTarget = !isActiveSource && (connCtx?.compatibleNodeIds?.has(id) ?? false);
+  const isIncompatible     = !!connCtx?.activeHandle && !isActiveSource && !isCompatibleTarget;
+
   if (!info) return <div className="sn-error">Unknown class: {className}</div>;
 
   const set = useCallback((slot, val) => {
@@ -284,7 +353,13 @@ export function SchemaNode({ id, data, selected }) {
   }, [id, values, updateNodeData]);
 
   return (
-    <div ref={nodeRef} className={`sn-node${selected ? ' sn-node--selected' : ''}`}>
+    <div ref={nodeRef} className={[
+      'sn-node',
+      selected           ? 'sn-node--selected'         : '',
+      isActiveSource     ? 'sn-node--active-source'    : '',
+      isCompatibleTarget ? 'sn-node--compatible-target': '',
+      isIncompatible     ? 'sn-node--incompatible'     : '',
+    ].filter(Boolean).join(' ')}>
 
       <NodeResizer
         isVisible={selected}
@@ -303,7 +378,14 @@ export function SchemaNode({ id, data, selected }) {
 
       {/* ── Header ───────────────────────────────────────────────────── */}
       <div className="sn-header">
-        <span className="sn-header__title">{info.name}</span>
+        <div className="sn-header__title-group">
+          <span className="sn-header__title">{info.name}</span>
+          <HeaderAlias
+            id={id}
+            displayName={data.displayName ?? ''}
+            updateNodeData={updateNodeData}
+          />
+        </div>
         {violations.length > 0 && (
           <span
             className="sn-header__badge"
@@ -323,11 +405,22 @@ export function SchemaNode({ id, data, selected }) {
       {info.refSlots.length > 0 && (
         <div ref={connsRef} className="sn-connections">
           <div className="sn-section__title">connections</div>
-          {info.refSlots.map(s => (
-            <div key={s.name} className="sn-conn-row">
-              <span className="sn-conn-label" title={s.description ?? s.name}>{s.name}</span>
-            </div>
-          ))}
+          {info.refSlots.map(s => {
+            const isRowActive = connCtx?.activeHandle?.nodeId === id && connCtx?.activeHandle?.handleId === s.name;
+            return (
+              <div
+                key={s.name}
+                className={`sn-conn-row${isRowActive ? ' sn-conn-row--active' : ''}`}
+                title="Click to see compatible connections"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  connCtx?.onHandleClick?.(id, s.name, e.clientX, e.clientY);
+                }}
+              >
+                <span className="sn-conn-label" title={s.description ?? s.name}>{s.name}</span>
+              </div>
+            );
+          })}
         </div>
       )}
 

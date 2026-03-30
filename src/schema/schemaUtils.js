@@ -278,6 +278,43 @@ export function isSubtypeOf(childName, parentName, schema) {
 }
 
 /**
+ * Return all valid target class names for a named ref-slot on a given class.
+ * Used by the guided-connection feature to determine which classes can be
+ * connected via a specific slot.
+ *
+ * @param {object} schema
+ * @param {string} className   – the source node's class
+ * @param {string} slotName    – the ref slot being activated
+ * @returns {string[]}         – array of valid target class names
+ */
+export function getCompatibleClasses(schema, className, slotName) {
+  const info = getClassInfo(schema, className);
+  if (!info) return [];
+  const slot = info.refSlots.find(s => s.name === slotName);
+  return slot?.targetClasses ?? [];
+}
+
+/**
+ * Return a short human-readable label for a canvas node.
+ * Fallback chain: values.title → last URI segment of values.id → className.
+ *
+ * @param {{ data: { className: string, values?: object } }} node
+ * @returns {string}
+ */
+export function getNodeDisplayLabel(node) {
+  const { values = {}, className, displayName } = node.data ?? {};
+  if (displayName && String(displayName).trim())
+    return String(displayName).trim();
+  if (values.title && String(values.title).trim())
+    return String(values.title).trim();
+  if (values.id && String(values.id).trim()) {
+    const tail = String(values.id).trim().split(/[/#]/).filter(Boolean).pop();
+    if (tail) return tail;
+  }
+  return className ?? 'Unknown';
+}
+
+/**
  * Returns an array of required-field violations for a node's current values.
  *
  * Each violation is: { slotName: string, section: 'fields'|'measurements'|'references' }

@@ -1,9 +1,10 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
   applyNodeChanges,
   applyEdgeChanges,
   addEdge,
+  reconnectEdge,
   Background,
   BackgroundVariant,
   MiniMap,
@@ -11,6 +12,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { SchemaNode } from './nodes/SchemaNode';
+import { GhostNode } from './nodes/GhostNode';
 import { NodePalette } from './components/NodePalette';
 import { CanvasControls } from './components/CanvasControls';
 import { WelcomeScreen } from './components/WelcomeScreen';
@@ -20,14 +22,16 @@ import { ValidationBar } from './components/ValidationBar';
 import { fromJson } from './loaders/fromJson';
 import { toJson } from './loaders/toJson';
 import { dump as yamlDump, load as yamlLoad } from 'js-yaml';
-import { getClassInfo, isSubtypeOf, validateNode } from './schema/schemaUtils';
+import { getClassInfo, getCompatibleClasses, getNodeDisplayLabel, isSubtypeOf, validateNode } from './schema/schemaUtils';
+import { ActiveHandleContext } from './shared/ActiveHandleContext';
+import { generateDisplayName } from './utils/nodeNames';
 // ~config resolves to the active schema's config file at build time
 // (set VITE_SCHEMA env var; default: chemdcat)
 import { config } from '~config';
 
 const { schema } = config;
 
-const nodeTypes = { schemaNode: SchemaNode };
+const nodeTypes = { schemaNode: SchemaNode, ghostNode: GhostNode };
 
 // Pre-filled with data from MaterialSample-001.json for an immediate visual demo
 const initialNodes = [
@@ -36,7 +40,8 @@ const initialNodes = [
     type: 'schemaNode',
     position: { x: 280, y: 60 },
     data: {
-      className: 'MaterialSample',
+      className:   'MaterialSample',
+      displayName: generateDisplayName('MaterialSample'),
       values: {
         id:    'https://example.org/sample/philips-wood-001',
         title: "Philip's Wood Sample",
@@ -69,9 +74,12 @@ export default function App() {
   const [importError,    setImportError]    = useState(null);
   const [nodes, setNodes] = useState(initialNodes);
   const [edges, setEdges] = useState(initialEdges);
+  const [activeHandle, setActiveHandle] = useState(null); // { nodeId, handleId } | null
+  const [ghostNodeId,  setGhostNodeId]  = useState(null); // id of the current ghost node
   const { screenToFlowPosition, fitView } = useReactFlow();
   const violationCursorRef = useRef(0);
   const fileInputRef = useRef(null);
+  const originalEdgeRef = useRef(null); // edge displaced by the edge-click ghost flow
 
   // ── Welcome / load handlers ────────────────────────────────────────────────
   const handleNew = () => {
@@ -198,34 +206,281 @@ export default function App() {
       id,
       type:     'schemaNode',
       position,
-      data:     { className, values: {} },
+      data:     { className, displayName: generateDisplayName(className), values: {} },
     }]);
   }, [screenToFlowPosition]);
 
+  // ── Guided connections — helpers defined early (used by onConnect below) ──
+
+  // Shared props for every real (non-ghost) edge
+  const realEdgeProps = useCallback((sourceHandle) => ({
+    type:                settings.edgeType,
+    animated:            true,
+    reconnectable:       true,
+    label:               sourceHandle,
+    labelStyle:          { fontSize: 10, fill: '#374151', fontFamily: 'ui-sans-serif, system-ui, sans-serif' },
+    labelBgStyle:        { fill: '#fff', fillOpacity: 0.85 },
+    labelBgPadding:      [4, 2],
+    labelBgBorderRadius: 3,
+  }), [settings.edgeType]);
+
+  // Remove the ghost node/edges and reset guided-connection state.
+  // restoreOriginal=true  (default) → cancelled by user; restore displaced original edge.
+  // restoreOriginal=false           → user confirmed a new connection; discard original.
+  const dismissGhost = useCallback((restoreOriginal = true) => {
+    const orig = originalEdgeRef.current;
+    originalEdgeRef.current = null;
+    setNodes(nds => nds.filter(n => n.type !== 'ghostNode'));
+    setEdges(eds => {
+      const withoutGhost = eds.filter(e => !e.data?.isGhost);
+      return (restoreOriginal && orig) ? [...withoutGhost, orig] : withoutGhost;
+    });
+    setGhostNodeId(null);
+    setActiveHandle(null);
+  }, []);
+
   // ── Create edge with slot name as label ───────────────────────────────────
+  // When source is a ghost node, reroute the connection to the real source node.
   const onConnect = useCallback((params) => {
+    const srcNode = nodes.find(n => n.id === params.source);
+    if (srcNode?.type === 'ghostNode') {
+      const realSourceId = srcNode.data.sourceNodeId;
+      const slotName     = srcNode.data.slotName;
+      setEdges(eds => addEdge({
+        id: `${realSourceId}--${slotName}--${params.target}`,
+        source: realSourceId, target: params.target, sourceHandle: slotName,
+        ...realEdgeProps(slotName),
+      }, eds));
+      dismissGhost(false);
+      return;
+    }
     setEdges(eds => addEdge({
       ...params,
-      type:                settings.edgeType,
-      animated:            true,
-      label:               params.sourceHandle,
-      labelStyle:          { fontSize: 10, fill: '#374151', fontFamily: 'ui-sans-serif, system-ui, sans-serif' },
-      labelBgStyle:        { fill: '#fff', fillOpacity: 0.85 },
-      labelBgPadding:      [4, 2],
-      labelBgBorderRadius: 3,
+      ...realEdgeProps(params.sourceHandle),
     }, eds));
-  }, [settings.edgeType]);
+  }, [nodes, realEdgeProps, dismissGhost]);
 
   // ── Only allow connections where the target class is in the slot's targetClasses ──
+  // Ghost node as source: validate against the real source node's slot.
   const isValidConnection = useCallback((connection) => {
     const { source, sourceHandle, target } = connection;
     if (source === target) return false;
     const srcNode = nodes.find(n => n.id === source);
     const tgtNode = nodes.find(n => n.id === target);
     if (!srcNode || !tgtNode) return false;
+
+    if (srcNode.type === 'ghostNode') {
+      const realSrc = nodes.find(n => n.id === srcNode.data.sourceNodeId);
+      if (!realSrc) return false;
+      const info = getClassInfo(schema, realSrc.data.className);
+      const slot = info?.refSlots.find(s => s.name === srcNode.data.slotName);
+      return slot?.targetClasses.some(tc => isSubtypeOf(tgtNode.data.className, tc, schema)) ?? false;
+    }
+
     const info = getClassInfo(schema, srcNode.data.className);
     const slot = info?.refSlots.find(s => s.name === sourceHandle);
     return slot?.targetClasses.some(tc => isSubtypeOf(tgtNode.data.className, tc, schema)) ?? false;
+  }, [nodes]);
+
+  // ── Guided connections ────────────────────────────────────────────────────
+
+  // Dismiss on Escape
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') dismissGhost(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [dismissGhost]);
+
+  // Called by SchemaNode when a connection-row label is clicked.
+  // Creates a ghost node + ghost edge instead of showing the menu directly.
+  const handleHandleClick = useCallback((nodeId, handleId) => {
+    // Toggle off if the same slot is clicked again
+    if (activeHandle?.nodeId === nodeId && activeHandle?.handleId === handleId) {
+      dismissGhost();
+      return;
+    }
+    // Clear existing ghost, restoring any displaced original edge
+    const prevOrig = originalEdgeRef.current;
+    originalEdgeRef.current = null;
+    setNodes(nds => nds.filter(n => n.type !== 'ghostNode'));
+    setEdges(eds => {
+      const withoutGhost = eds.filter(e => !e.data?.isGhost);
+      return prevOrig ? [...withoutGhost, prevOrig] : withoutGhost;
+    });
+    setGhostNodeId(null);
+
+    const srcNode = nodes.find(n => n.id === nodeId);
+    if (!srcNode) return;
+
+    setActiveHandle({ nodeId, handleId });
+
+    const gId = `ghost-${Date.now()}`;
+    setGhostNodeId(gId);
+    setNodes(nds => [...nds, {
+      id:        gId,
+      type:      'ghostNode',
+      position:  { x: srcNode.position.x + 480, y: srcNode.position.y },
+      data:      { slotName: handleId, sourceNodeId: nodeId },
+      draggable: true,
+      deletable: false,
+      selectable: false,
+    }]);
+    setEdges(eds => [...eds, {
+      id:             `ghost-edge-${gId}`,
+      source:         nodeId,
+      target:         gId,
+      sourceHandle:   handleId,
+      type:           'straight',
+      style:          { strokeDasharray: '6 3', stroke: '#94a3b8', strokeWidth: 1.5 },
+      animated:       false,
+      selectable:     false,
+      deletable:      false,
+      data:           { isGhost: true },
+    }]);
+  }, [activeHandle, nodes, dismissGhost]);
+
+  // Pre-compute which canvas nodes are valid targets + which classes can be created.
+  // Ghost nodes are excluded from both lists.
+  const compatibleInfo = useMemo(() => {
+    if (!activeHandle) return { compatibleNodeIds: new Set(), compatibleClasses: [], compatibleNodes: [] };
+    const srcNode = nodes.find(n => n.id === activeHandle.nodeId);
+    if (!srcNode) return { compatibleNodeIds: new Set(), compatibleClasses: [], compatibleNodes: [] };
+    const classes = getCompatibleClasses(schema, srcNode.data.className, activeHandle.handleId);
+    const matching = nodes.filter(n =>
+      n.id !== activeHandle.nodeId &&
+      n.type !== 'ghostNode' &&
+      classes.some(tc => isSubtypeOf(n.data.className, tc, schema))
+    );
+    return {
+      compatibleClasses: classes,
+      compatibleNodeIds: new Set(matching.map(n => n.id)),
+      compatibleNodes:   matching.map(n => ({ id: n.id, label: getNodeDisplayLabel(n) })),
+    };
+  }, [activeHandle, nodes]);
+
+  // Create a new node of the chosen class and wire a real edge from the active slot.
+  const handleCreateAndConnect = useCallback((className) => {
+    if (!activeHandle) return;
+    const { nodeId, handleId } = activeHandle;
+    const srcNode = nodes.find(n => n.id === nodeId);
+    if (!srcNode) return;
+    const newId = `${className.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now()}`;
+    setNodes(nds => [...nds, {
+      id:       newId,
+      type:     'schemaNode',
+      position: { x: srcNode.position.x + 480, y: srcNode.position.y },
+      data:     { className, displayName: generateDisplayName(className), values: {} },
+    }]);
+    setEdges(eds => addEdge({
+      id: `${nodeId}--${handleId}--${newId}`,
+      source: nodeId, target: newId, sourceHandle: handleId,
+      ...realEdgeProps(handleId),
+    }, eds));
+    dismissGhost(false);
+  }, [activeHandle, nodes, realEdgeProps, dismissGhost]);
+
+  // Connect the active slot to an already-existing canvas node.
+  const handleConnectExisting = useCallback((targetNodeId) => {
+    if (!activeHandle) return;
+    const { nodeId, handleId } = activeHandle;
+    setEdges(eds => addEdge({
+      id: `${nodeId}--${handleId}--${targetNodeId}`,
+      source: nodeId, target: targetNodeId, sourceHandle: handleId,
+      ...realEdgeProps(handleId),
+    }, eds));
+    dismissGhost(false);
+  }, [activeHandle, realEdgeProps, dismissGhost]);
+
+  // Context value passed to all SchemaNodes and the GhostNode
+  const activeHandleCtxValue = useMemo(() => ({
+    activeHandle,
+    compatibleNodeIds:  compatibleInfo.compatibleNodeIds,
+    compatibleClasses:  compatibleInfo.compatibleClasses,
+    compatibleNodes:    compatibleInfo.compatibleNodes,
+    onHandleClick:      handleHandleClick,
+    onDismissGhost:     dismissGhost,
+    onCreateAndConnect: handleCreateAndConnect,
+    onConnectExisting:  handleConnectExisting,
+  }), [activeHandle, compatibleInfo, handleHandleClick, dismissGhost, handleCreateAndConnect, handleConnectExisting]);
+
+  // Phase-1 reconnect: drag existing edge endpoint to a new target node
+  const onReconnect = useCallback((oldEdge, newConnection) => {
+    setEdges(eds => reconnectEdge(oldEdge, newConnection, eds));
+  }, []);
+
+  // Clicking an existing edge opens the ghost class-box positioned between source and target.
+  // The original edge is removed and replaced by two ghost edges (src→ghost, ghost→tgt)
+  // so the connection visually "passes through" the ghost node.
+  // Cancelling (Escape / X / pane) restores the original edge; confirming discards it.
+  const onEdgeClick = useCallback((event, edge) => {
+    if (edge.data?.isGhost) return;
+    const srcNode = nodes.find(n => n.id === edge.source);
+    const tgtNode = nodes.find(n => n.id === edge.target);
+    if (!tgtNode) return;
+
+    const slotName = edge.sourceHandle ?? String(edge.label ?? '');
+
+    // Replace any previously stored original edge with the new one
+    const prevOrig = originalEdgeRef.current;
+    originalEdgeRef.current = edge;
+
+    // Position ghost between source and target, just before the target node
+    const ghostX = srcNode
+      ? Math.max(srcNode.position.x + 340, tgtNode.position.x - 380)
+      : tgtNode.position.x - 380;
+    const ghostY = tgtNode.position.y;
+
+    const gId = `ghost-${Date.now()}`;
+    setGhostNodeId(gId);
+    setActiveHandle({ nodeId: edge.source, handleId: slotName });
+
+    setNodes(nds => [
+      ...nds.filter(n => n.type !== 'ghostNode'),
+      {
+        id:         gId,
+        type:       'ghostNode',
+        position:   { x: ghostX, y: ghostY },
+        data:       { slotName, sourceNodeId: edge.source, startExpanded: true },
+        draggable:  true,
+        deletable:  false,
+        selectable: false,
+      },
+    ]);
+
+    setEdges(eds => {
+      // Remove ghost edges + restore any previous displaced edge + remove the clicked edge
+      const base = eds.filter(e => !e.data?.isGhost && e.id !== edge.id);
+      const withPrev = prevOrig ? [...base, prevOrig] : base;
+      return [
+        ...withPrev,
+        // Source → Ghost (upstream dashed)
+        {
+          id:           `ghost-edge-in-${gId}`,
+          source:       edge.source,
+          target:       gId,
+          sourceHandle: slotName,
+          type:         'straight',
+          style:        { strokeDasharray: '6 3', stroke: '#94a3b8', strokeWidth: 1.5 },
+          animated:     false,
+          selectable:   false,
+          deletable:    false,
+          data:         { isGhost: true },
+        },
+        // Ghost → Target (downstream dashed — shows the existing connection routing through)
+        {
+          id:           `ghost-edge-out-${gId}`,
+          source:       gId,
+          target:       edge.target,
+          sourceHandle: 'out',
+          type:         'straight',
+          style:        { strokeDasharray: '4 4', stroke: '#cbd5e1', strokeWidth: 1 },
+          animated:     false,
+          selectable:   false,
+          deletable:    false,
+          data:         { isGhost: true },
+        },
+      ];
+    });
   }, [nodes]);
 
   // ── Settings change — also update existing edges when edgeType changes ─────
@@ -255,6 +510,7 @@ export default function App() {
       />
 
       {/* ── Canvas ─────────────────────────────────── */}
+      <ActiveHandleContext.Provider value={activeHandleCtxValue}>
       <div style={{ flex: 1, position: 'relative' }}>
         <ReactFlow
           nodes={nodes}
@@ -272,6 +528,10 @@ export default function App() {
           snapToGrid={settings.snapToGrid}
           snapGrid={settings.snapGrid}
           defaultEdgeOptions={{ type: settings.edgeType, animated: true }}
+          onEdgeClick={onEdgeClick}
+          onPaneClick={dismissGhost}
+          reconnectRadius={12}
+          onReconnect={onReconnect}
           fitView
           fitViewOptions={{ padding: 0.3 }}
         >
@@ -302,7 +562,9 @@ export default function App() {
 
         {/* Validation bar — outside ReactFlow to avoid overflow:hidden clipping */}
         <ValidationBar nodes={nodes} onNext={handleNextViolation} />
+
       </div>
+      </ActiveHandleContext.Provider>
 
       {/* ── Settings modal ─────────────────────────── */}
       {settingsOpen && (

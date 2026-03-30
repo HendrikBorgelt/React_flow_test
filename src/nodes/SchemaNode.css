@@ -36,6 +36,26 @@
   box-shadow:   0 0 0 3px rgba(59,130,246,.18);
 }
 
+/* ── Guided-connection highlight states ────────────────────────────────────── */
+
+/* The node whose handle was clicked */
+.sn-node--active-source {
+  border-color: var(--sn-accent);
+  box-shadow:   0 0 0 2px var(--sn-accent), 0 0 14px rgba(59,130,246,.35);
+}
+
+/* Nodes that are valid connection targets */
+.sn-node--compatible-target {
+  border-color: #22c55e;
+  box-shadow:   0 0 0 2px #22c55e, 0 0 14px rgba(34,197,94,.30);
+}
+
+/* Nodes that cannot be connected to the active slot */
+.sn-node--incompatible {
+  opacity: 0.38;
+  filter:  grayscale(0.4);
+}
+
 /* ── Header ────────────────────────────────────────────────────────────────── */
 .sn-header {
   background:    var(--sn-header-bg);
@@ -49,14 +69,67 @@
   align-items:   center;
   justify-content: space-between;
   min-height:    35px;
+  position:      relative;   /* ensure header stacks above NodeResizer handles */
+  z-index:       2;
+}
+
+/* Title group: class name + editable alias, share available space */
+.sn-header__title-group {
+  flex:        1;
+  min-width:   0;
+  display:     flex;
+  align-items: center;
+  gap:         5px;
+  overflow:    hidden;
 }
 
 .sn-header__title {
-  flex: 1;
+  flex-shrink:   0;
   white-space:   nowrap;
   overflow:      hidden;
   text-overflow: ellipsis;
+  max-width:     160px;
 }
+
+/* Provisional display name — click to edit */
+.sn-header__alias {
+  flex:          1 1 0;
+  min-width:     0;
+  font-size:     11px;
+  font-weight:   400;
+  font-style:    italic;
+  font-family:   ui-monospace, monospace;
+  color:         rgba(255,255,255,.60);
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  cursor:        text;
+  user-select:   none;
+  transition:    color .12s;
+}
+.sn-header__alias:hover         { color: rgba(255,255,255,.90); }
+.sn-header__alias--empty        { color: rgba(255,255,255,.28); }
+.sn-header__alias--empty:hover  { color: rgba(255,255,255,.55); }
+
+/* Inline input while editing the display name */
+.sn-header__alias-input {
+  flex:          1 1 0;
+  min-width:     40px;
+  background:    rgba(255,255,255,.15);
+  border:        1px solid rgba(255,255,255,.40);
+  border-radius: 3px;
+  color:         #fff;
+  font-size:     11px;
+  font-style:    italic;
+  font-family:   ui-monospace, monospace;
+  padding:       1px 5px;
+  outline:       none;
+}
+.sn-header__alias-input:focus {
+  background:   rgba(255,255,255,.22);
+  border-color: rgba(255,255,255,.75);
+}
+.sn-header__alias-input::placeholder { color: rgba(255,255,255,.35); }
 
 .sn-header__delete {
   flex-shrink:   0;
@@ -278,6 +351,22 @@
   box-sizing:  border-box;
 }
 
+.sn-conn-row {
+  cursor: pointer;
+}
+.sn-conn-row:hover {
+  background: #f0f7ff;
+}
+
+/* Active slot row — shown when this specific connection is selected */
+.sn-conn-row--active {
+  background: #eff6ff;
+}
+.sn-conn-row--active .sn-conn-label {
+  color:       var(--sn-accent);
+  font-weight: 600;
+}
+
 .sn-conn-label {
   font-size:     11px;
   color:         var(--sn-text);
@@ -295,6 +384,7 @@
   background:   var(--sn-accent);
   border:       2px solid #fff;
   box-shadow:   0 0 0 1px var(--sn-accent);
+  z-index:      3;   /* stay above NodeResizer edge lines */
 }
 
 /* ── Error state ───────────────────────────────────────────────────────────── */
