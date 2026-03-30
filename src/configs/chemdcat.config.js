@@ -32,12 +32,77 @@ const CHEMDCAT_ABSTRACT = [
   'ChemicalEntity',  // abstract base for Atom, …
 ];
 
+// ── Palette subsections ───────────────────────────────────────────────────────
+// Each section corresponds to one source schema file.
+// Inline/mixin/enum classes are intentionally excluded from every section.
+// (The "Relevant classes" section is auto-computed by listNodeClasses().)
+const PALETTE_SECTIONS = [
+  {
+    id:    'dcat-ap',
+    label: 'DCAT-AP',
+    // dcat_ap_linkml.yaml — base W3C DCAT-AP vocabulary
+    classes: [
+      'Activity', 'Agent', 'Any', 'Attribution',
+      'Catalogue', 'CatalogueRecord', 'Checksum',
+      'Concept', 'ConceptScheme',
+      'DataService', 'Dataset', 'DatasetSeries',
+      'Distribution', 'Document',
+      'Frequency', 'Geometry', 'Identifier', 'Kind',
+      'LegalResource', 'LicenseDocument', 'LinguisticSystem', 'Location',
+      'MediaType', 'MediaTypeOrExtent',
+      'PeriodOfTime', 'Policy', 'ProvenanceStatement',
+      'Relationship', 'Resource', 'RightsStatement', 'Role',
+      'Standard', 'SupportiveEntity', 'TimeInstant',
+    ],
+  },
+  {
+    id:    'dcat-ap-plus',
+    label: 'DCAT-AP+',
+    // dcat_ap_plus.yaml — classes added over the base DCAT-AP vocabulary
+    classes: [
+      'AgenticEntity', 'AnalysisDataset', 'AnalysisSourceData',
+      'DataAnalysis', 'DataGeneratingActivity', 'DefinedTerm',
+      'Device', 'Entity', 'EvaluatedActivity', 'EvaluatedEntity',
+      'Plan', 'Software',
+    ],
+  },
+  {
+    id:    'chemdcat',
+    label: 'ChemDCAT-AP',
+    // chem_dcat_ap.yaml — top-level classes added by the ChemDCAT-AP profile
+    classes: ['Laboratory', 'PolymerSample', 'SubstanceSample'],
+  },
+  {
+    id:    'material',
+    label: 'Material Entities',
+    // material_entities_ap.yaml (measurement-property classes excluded)
+    classes: ['MaterialEntity', 'MaterialSample'],
+  },
+  {
+    id:    'chemical',
+    label: 'Chemical Entities',
+    // chemical_entities_ap.yaml (inline identifier/measurement classes excluded)
+    classes: ['Atom', 'ChemicalEntity'],
+  },
+  {
+    id:    'reaction',
+    label: 'Chemical Reaction',
+    // chemical_reaction_ap.yaml (inline yield/molar classes excluded)
+    classes: [
+      'Catalyst', 'ChemicalProduct', 'ChemicalReaction',
+      'DissolvingSubstance', 'Reagent', 'Reactor',
+      'StartingMaterial', 'Surrounding',
+    ],
+  },
+];
+
 export const config = {
   appTitle:    'Schema Graph Editor',
   appSubtitle: 'chem-dcat-ap visual instance editor',
   githubUrl:   'https://github.com/nfdi4cat/chem-dcat-ap',
   schema,
   abstractClasses: [...DCAT_AP_BASE, ...DCAT_ADMIN, ...CHEMDCAT_ABSTRACT],
+  paletteSections: PALETTE_SECTIONS,
   examples: [
     {
       json:  msJson,
