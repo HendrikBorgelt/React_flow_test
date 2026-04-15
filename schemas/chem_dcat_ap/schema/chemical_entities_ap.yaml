@@ -54,7 +54,7 @@ classes:
       - has_molar_mass
   Atom:
     class_uri: CHEBI:33250
-    is_a: Entity
+    is_a: ChemicalEntity
     description: An Entity constituting the smallest component of a chemical element having the chemical properties of the element.
     slot_usage:
       rdf_type:

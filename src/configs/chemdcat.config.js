@@ -31,6 +31,18 @@ const CHEMDCAT_ABSTRACT = [
   'MaterialEntity',  // abstract base for MaterialSample, SubstanceSample, …
   'ChemicalEntity',  // abstract base for Atom, …
 ];
+// DCAT-AP / DCAT-AP+ data-catalog classes that should never be auto-inferred
+// as children of chemical/material entity slots (has_part, composed_of, …).
+// They remain visible in the palette's manual subsections so users can still
+// add them explicitly; they are only excluded from the automatic class
+// inference used when loading JSON/YAML files.
+const DCAT_DATA_CLASSES = [
+  'AnalysisDataset',    // dataset catalog entity, not a material/chemical entity
+  'AnalysisSourceData', // evaluated-entity subtype, not a physical material
+  'DataAnalysis',       // analysis activity, not a material
+  'Dataset',            // base DCAT-AP dataset, not a material
+  'Software',           // software entity, not a material
+];
 
 // ── Palette subsections ───────────────────────────────────────────────────────
 // Each section corresponds to one source schema file.
@@ -101,7 +113,7 @@ export const config = {
   appSubtitle: 'chem-dcat-ap visual instance editor',
   githubUrl:   'https://github.com/nfdi4cat/chem-dcat-ap',
   schema,
-  abstractClasses: [...DCAT_AP_BASE, ...DCAT_ADMIN, ...CHEMDCAT_ABSTRACT],
+  abstractClasses: [...DCAT_AP_BASE, ...DCAT_ADMIN, ...CHEMDCAT_ABSTRACT, ...DCAT_DATA_CLASSES],
   paletteSections: PALETTE_SECTIONS,
   examples: [
     {

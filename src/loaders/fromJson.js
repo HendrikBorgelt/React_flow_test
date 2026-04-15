@@ -183,13 +183,25 @@ function inferClass(obj, targetClasses, schema, nodeClassSet) {
   if (!pool.length) return null;
   if (pool.length === 1) return pool[0];
 
-  let best = pool[0], bestScore = -1;
+  // Primary sort: how many of the object's keys are valid slots in the class
+  // (higher = better match).
+  // Tie-break: prefer the class with MORE total properties.  Classes that
+  // inherit deeply (e.g. Atom < ChemicalEntity < MaterialEntity) accumulate
+  // more properties than shallow, generic classes (e.g. AnalysisDataset).
+  // This prevents alphabetically-first but semantically-wrong classes from
+  // winning when scores are equal.
+  let best = pool[0], bestScore = -1, bestPropCount = -1;
   for (const tc of pool) {
     const def = defs[tc];
     if (!def?.properties) continue;
-    const known = new Set(Object.keys(def.properties));
-    const score = Object.keys(obj).filter(k => known.has(k)).length;
-    if (score > bestScore) { bestScore = score; best = tc; }
+    const known      = new Set(Object.keys(def.properties));
+    const score      = Object.keys(obj).filter(k => known.has(k)).length;
+    const propCount  = known.size;
+    if (score > bestScore || (score === bestScore && propCount > bestPropCount)) {
+      bestScore     = score;
+      bestPropCount = propCount;
+      best          = tc;
+    }
   }
   return best;
 }

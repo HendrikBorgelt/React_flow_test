@@ -10,13 +10,7 @@
     "id": "ENVO:00002040",
     "title": "wood"
   },
-  "derived_from": {
-    "id": "https://www.wikidata.org/wiki/Q4204",
-    "rdf_type": {
-      "id": "ENVO:01000174",
-      "title": "forest biome"
-    }
-  },
+  "derived_from": "https://www.wikidata.org/wiki/Q4204",
   "has_physical_state": "SOLID",
   "has_temperature": [
     {

@@ -9,6 +9,7 @@
   ],
   "has_part": [
     {
+      "@type": "SubstanceSample",
       "id": "https://dx.doi.org/10.14272/UGRXAOUDHZOHPF-UHFFFAOYSA-N.2#EvaluatedCompound",
       "description": "compound assigned to https://dx.doi.org/10.14272/UGRXAOUDHZOHPF-UHFFFAOYSA-N.2",
       "other_identifier": [
