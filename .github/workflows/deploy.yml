@@ -5,18 +5,23 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Write access is needed to push the built files to the gh-pages branch.
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
+
+    # Opt into Node.js 24 for the GitHub Actions runner environment so that
+    # actions/checkout, actions/setup-node, etc. don't emit deprecation warnings.
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
       - uses: actions/checkout@v4
 
@@ -79,16 +84,19 @@ jobs:
       # ── Copy static docs pages to dist/ root ───────────────────────────────
       - run: node scripts/copy-docs.mjs
 
-      - uses: actions/upload-pages-artifact@v3
+      # ── Push dist/ to the gh-pages branch ──────────────────────────────────
+      # This replaces the GitHub Actions artifact approach.
+      # After this workflow runs, the gh-pages branch will contain the exact
+      # files served by GitHub Pages — fully inspectable via GitHub Desktop,
+      # git diff, or the GitHub web UI.
+      #
+      # ⚠️  Repository setting required (one-time, manual):
+      #   Settings → Pages → Source → "Deploy from a branch"
+      #   Branch: gh-pages  /  Folder: / (root)
+      - name: Deploy to gh-pages branch
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          branch: gh-pages
+          folder: dist
+          clean: true          # remove files deleted from dist on next deploy
+          single-commit: true  # squash history so gh-pages stays lean
