@@ -26,10 +26,14 @@ const DCAT_ADMIN = [
   'PeriodOfTime', 'Relationship',
 ];
 // chemdcat-specific abstract material/entity bases:
+// NOTE: ChemicalEntity is intentionally NOT listed here. gen-json-schema does
+// not flatten ChemicalEntity's class-level slots (inchi, smiles, …) into its
+// subclass Atom, so isSubtypeOf('Atom','ChemicalEntity') returns false and
+// inference for composed_of slots would fall through to ChemicalReaction.
+// Keeping ChemicalEntity concrete lets it win composed_of inference directly.
 const CHEMDCAT_ABSTRACT = [
   'Device',          // abstract AgenticEntity base → use Reactor instead
   'MaterialEntity',  // abstract base for MaterialSample, SubstanceSample, …
-  'ChemicalEntity',  // abstract base for Atom, …
 ];
 // DCAT-AP / DCAT-AP+ data-catalog classes that should never be auto-inferred
 // as children of chemical/material entity slots (has_part, composed_of, …).
