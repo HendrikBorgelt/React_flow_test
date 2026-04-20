@@ -43,13 +43,22 @@ const COREMETA_ABSTRACT = [
   'MaterialEntity',             // abstract material base
   'ChemicalEntity',             // abstract chemical entity base
 ];
+// DCAT-AP / DCAT-AP+ data-catalog classes that should never be auto-inferred
+// as children of domain slots. They have 39 properties (the most in the schema)
+// and would win every tie-break, incorrectly appearing as children of material
+// or activity nodes. Excluded from inference; still usable via explicit @type.
+const DCAT_DATA_CLASSES = [
+  'AnalysisDataset',  // dataset catalog entity, not a domain node
+  'CatalysisDataset', // coremeta4cat dataset root, not a domain child node
+  'Dataset',          // base DCAT-AP dataset
+];
 
 export const config = {
   appTitle:    'Schema Graph Editor',
   appSubtitle: 'CoreMeta4Cat visual instance editor',
   githubUrl:   'https://github.com/nfdi4cat/CoreMeta4Cat',
   schema,
-  abstractClasses: [...DCAT_AP_BASE, ...DCAT_ADMIN, ...COREMETA_ABSTRACT],
+  abstractClasses: [...DCAT_AP_BASE, ...DCAT_ADMIN, ...COREMETA_ABSTRACT, ...DCAT_DATA_CLASSES],
   examples: [
     {
       json:  rxnJson,
