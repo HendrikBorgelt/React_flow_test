@@ -68,6 +68,10 @@ jobs:
           gen-json-schema schemas/dcat_ap_plus/schema/dcat_ap_plus.yaml \
             > src/schema/dcat_ap_plus.schema.json
 
+      # ── Validate example data against compiled schemas ─────────────────────
+      - name: Validate example data
+        run: node scripts/validate-examples.mjs
+
       # ── Install JS dependencies ─────────────────────────────────────────────
       - run: npm ci
 

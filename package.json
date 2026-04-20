@@ -14,7 +14,8 @@
     "build:app:coremeta4cat": "VITE_SCHEMA=coremeta4cat vite build",
     "build:app:dcat-ap-plus": "VITE_SCHEMA=dcat-ap-plus vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "validate-examples": "node scripts/validate-examples.mjs"
   },
   "dependencies": {
     "@xyflow/react": "^12.10.0",

@@ -1,0 +1,74 @@
+name: Schema Staleness Check
+
+on:
+  pull_request:
+    branches: [main]
+
+# Read-only — we only diff, never push.
+permissions:
+  contents: read
+
+jobs:
+  schema-check:
+    runs-on: ubuntu-latest
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install LinkML
+        run: pip install linkml
+
+      # ── Same network-import patch as deploy.yml ──────────────────────────────
+      - name: Patch network imports → local DCAT-AP+ schema
+        run: |
+          find schemas -name "*.yaml" \
+            -exec sed -i \
+              's|dcatapplus:latest/schema/dcat_ap_plus|../../dcat_ap_plus/schema/dcat_ap_plus|g' \
+              {} +
+
+      # ── Recompile all three schemas ──────────────────────────────────────────
+      - name: Compile chem-dcat-ap schema
+        run: |
+          gen-json-schema schemas/chem_dcat_ap/schema/chem_dcat_ap.yaml \
+            > src/schema/dcat_4c_ap.schema.json
+
+      - name: Compile CoreMeta4Cat schema
+        run: |
+          gen-json-schema schemas/coremeta4cat/schema/coremeta4cat.yaml \
+            > src/schema/coremeta4cat.schema.json
+
+      - name: Compile DCAT-AP+ schema
+        run: |
+          gen-json-schema schemas/dcat_ap_plus/schema/dcat_ap_plus.yaml \
+            > src/schema/dcat_ap_plus.schema.json
+
+      # ── Fail if compiled schemas differ from what is committed ───────────────
+      # If this step fails, run gen-json-schema locally and commit the result.
+      - name: Check schemas are up to date
+        run: |
+          if ! git diff --exit-code src/schema/; then
+            echo ""
+            echo "ERROR: Committed schemas are stale."
+            echo "Recompile locally and commit the updated files:"
+            echo "  pip install linkml"
+            echo "  gen-json-schema schemas/chem_dcat_ap/schema/chem_dcat_ap.yaml > src/schema/dcat_4c_ap.schema.json"
+            echo "  gen-json-schema schemas/coremeta4cat/schema/coremeta4cat.yaml > src/schema/coremeta4cat.schema.json"
+            echo "  gen-json-schema schemas/dcat_ap_plus/schema/dcat_ap_plus.yaml  > src/schema/dcat_ap_plus.schema.json"
+            exit 1
+          fi
+
+      # ── Validate example data against the (now-confirmed-fresh) schemas ──────
+      - name: Validate example data
+        run: node scripts/validate-examples.mjs
