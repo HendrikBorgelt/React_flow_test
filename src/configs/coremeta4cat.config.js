@@ -48,9 +48,11 @@ const COREMETA_ABSTRACT = [
 // and would win every tie-break, incorrectly appearing as children of material
 // or activity nodes. Excluded from inference; still usable via explicit @type.
 const DCAT_DATA_CLASSES = [
-  'AnalysisDataset',  // dataset catalog entity, not a domain node
-  'CatalysisDataset', // coremeta4cat dataset root, not a domain child node
-  'Dataset',          // base DCAT-AP dataset
+  'AnalysisDataset',                       // dataset catalog entity, not a domain node
+  'CatalysisDataset',                      // coremeta4cat dataset root, not a domain child node
+  'Dataset',                               // base DCAT-AP dataset
+  'ReactionMonitoringDataset',             // dataset subtype — root class only, not an inferred child
+  'SubstanceSampleCharacterizationDataset', // dataset subtype — root class only, not an inferred child
 ];
 
 export const config = {
