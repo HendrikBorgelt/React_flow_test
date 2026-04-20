@@ -37,11 +37,13 @@ const CHEMDCAT_ABSTRACT = [
 // add them explicitly; they are only excluded from the automatic class
 // inference used when loading JSON/YAML files.
 const DCAT_DATA_CLASSES = [
-  'AnalysisDataset',    // dataset catalog entity, not a material/chemical entity
-  'AnalysisSourceData', // evaluated-entity subtype, not a physical material
-  'DataAnalysis',       // analysis activity, not a material
-  'Dataset',            // base DCAT-AP dataset, not a material
-  'Software',           // software entity, not a material
+  'AnalysisDataset',                      // dataset catalog entity, not a material/chemical entity
+  'AnalysisSourceData',                   // evaluated-entity subtype, not a physical material
+  'DataAnalysis',                         // analysis activity, not a material
+  'Dataset',                              // base DCAT-AP dataset, not a material
+  'ReactionMonitoringDataset',            // dataset subtype — root class only, not an inferred child
+  'SubstanceSampleCharacterizationDataset', // dataset subtype — root class only, not an inferred child
+  'Software',                             // software entity, not a material
 ];
 
 // ── Palette subsections ───────────────────────────────────────────────────────
