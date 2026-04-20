@@ -18,10 +18,10 @@ export function WelcomeScreen({ config, onNew, onLoad }) {
 
   const { appTitle, appSubtitle, githubUrl, schema, examples } = config;
 
-  const tryLoad = (json, label) => {
+  const tryLoad = (json, label, filename = '') => {
     setError(null);
     try {
-      onLoad(fromJson(json, schema, { abstractClasses: config.abstractClasses }));
+      onLoad(fromJson(json, schema, { abstractClasses: config.abstractClasses, filename }));
     } catch (err) {
       setError({ label, message: err.message, stack: err.stack });
     }
@@ -43,7 +43,7 @@ export function WelcomeScreen({ config, onNew, onLoad }) {
         setError({ label: file.name, message: `Invalid ${fmt}: ${parseErr.message}` });
         return;
       }
-      tryLoad(data, file.name);
+      tryLoad(data, file.name, file.name);
     };
     reader.readAsText(file);
   };

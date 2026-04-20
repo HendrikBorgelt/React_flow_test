@@ -177,7 +177,7 @@ export default function App() {
     reader.onload = (ev) => {
       try {
         const data = parseFile(ev.target.result, file.name);
-        const { nodes: ns, edges: es } = fromJson(data, schema, { abstractClasses: config.abstractClasses });
+        const { nodes: ns, edges: es } = fromJson(data, schema, { abstractClasses: config.abstractClasses, filename: file.name });
         setNodes(ns);
         setEdges(es);
       } catch (err) {

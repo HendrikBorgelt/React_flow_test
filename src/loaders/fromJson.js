@@ -206,6 +206,64 @@ function inferClass(obj, targetClasses, schema, nodeClassSet) {
   return best;
 }
 
+// ── Root-class inference (no nodeClassSet restriction) ────────────────────
+// Used when loading YAML/JSON that has no @type or type field.
+// Unlike inferClass() (which restricts candidates to nodeClassSet to avoid
+// dataset classes appearing as wrong children), this scores ALL non-enum
+// schema classes so that root-level classes excluded from child inference
+// (e.g. CatalysisDataset, ReactionMonitoringDataset) are still recognised.
+//
+// Tie-breaking order (highest priority first):
+//   1. Score  – classes that match more of the object's property keys win
+//   2. Filename hint – among all classes that reach the max score, prefer
+//      the class whose name matches the stem of the filename (e.g.
+//      "CatalysisDataset-001.yaml" → hint "CatalysisDataset").
+//      The hint is extracted by stripping the file extension and then
+//      removing any trailing "-<digits>…" instance suffix.
+//      Only applied when a hint is supplied and resolves to a real class.
+//   3. PropCount – prefer the class with more total properties (deeper
+//      inheritance = more domain-specific)
+//   4. Alphabetical – stable last-resort deterministic tie-break
+function inferRootClass(obj, schema, filename = '') {
+  const defs    = schema.$defs ?? {};
+  const objKeys = Object.keys(obj);
+
+  // Score every non-enum class
+  let maxScore = 0;
+  const scored = [];
+  for (const [name, def] of Object.entries(defs)) {
+    if (def.enum || !def.properties) continue;
+    const props     = Object.keys(def.properties);
+    const score     = objKeys.filter(k => props.includes(k)).length;
+    if (score === 0) continue;
+    scored.push({ name, score, propCount: props.length });
+    if (score > maxScore) maxScore = score;
+  }
+  if (!scored.length) return null;
+
+  // Filename hint: strip extension, then remove trailing instance suffix
+  // e.g. "CatalysisDataset-001.yaml" → "CatalysisDataset"
+  //      "Reaction.yml"              → "Reaction"
+  //      "my-file-001.yaml"          → "my-file" (not a class → no match)
+  let filenameHint = null;
+  if (filename) {
+    const stem = filename.replace(/\.[^.]+$/, '');          // strip extension
+    const hint = stem.replace(/-\d[\w.-]*$/, '');           // strip -001 / -001_v2 etc.
+    if (hint && hint in defs && !defs[hint].enum) filenameHint = hint;
+  }
+
+  // Among all max-score candidates, try filename hint first
+  if (filenameHint) {
+    const inTop = scored.some(x => x.name === filenameHint && x.score === maxScore);
+    if (inTop) return filenameHint;
+  }
+
+  // Fall back: propCount desc, then alphabetical
+  return scored
+    .sort((a, b) => b.score - a.score || b.propCount - a.propCount || a.name.localeCompare(b.name))
+    [0].name;
+}
+
 // ── Pixel-based tree layout ────────────────────────────────────────────────
 // Each node's `slotHeight` = the vertical space it occupies in the layout.
 // For leaves: slotHeight = nodeHeight + LAYOUT_GAP.
@@ -265,7 +323,7 @@ function layoutSubtree(rfId, depth, yStart, nodeMap, visited = new Set()) {
  *   abstract (excluded from the concrete node class set used for inference)
  * @returns {{ nodes: Node[], edges: Edge[] }}
  */
-export function fromJson(json, schema, { maxDepth = 3, abstractClasses = [] } = {}) {
+export function fromJson(json, schema, { maxDepth = 3, abstractClasses = [], filename = '' } = {}) {
   const nodeClassSet = new Set(listNodeClasses(schema, abstractClasses));
 
   // Internal tree nodes — will be converted to RF nodes after layout
@@ -332,11 +390,15 @@ export function fromJson(json, schema, { maxDepth = 3, abstractClasses = [] } = 
   // ── Resolve root class ─────────────────────────────────────────────────
   // 1. @type  — our own JSON-LD export format
   // 2. type   — standard LinkML native YAML/JSON format
-  // 3. infer  — score all node classes against the object's keys (best match)
+  // 3. infer  — inferRootClass() scores ALL schema classes (not just
+  //    nodeClassSet) so that dataset root classes excluded from child
+  //    inference (e.g. CatalysisDataset, ReactionMonitoringDataset) are
+  //    still recognised when loading YAML files that have no @type.
+  //    Child inference (inside process()) keeps using nodeClassSet.
   const className =
     (typeof json['@type'] === 'string' ? json['@type'] : null) ??
     (typeof json['type']  === 'string' ? json['type']  : null) ??
-    inferClass(json, [...nodeClassSet], schema, nodeClassSet);
+    inferRootClass(json, schema, filename);
 
   if (!className) throw new Error(
     'Could not determine the root class. Add a "@type" or "type" field with the LinkML class name.'
