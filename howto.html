@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How-to Guide – ChemDCAT-AP Widget</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #00796b;
+      --primary-dark: #004c40;
+      --primary-light: #e0f2f1;
+      --text: #212121;
+      --text-secondary: #616161;
+      --surface: #ffffff;
+      --bg: #fafafa;
+      --border: #e0e0e0;
+      --nav-height: 56px;
+    }
+    body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: var(--nav-height);
+      background: var(--primary); color: #fff;
+      display: flex; align-items: center;
+      padding: 0 24px; gap: 24px;
+      box-shadow: 0 2px 4px rgba(0,0,0,.2);
+    }
+    nav .nav-brand { font-size: 18px; font-weight: 500; text-decoration: none; color: #fff; }
+    nav .nav-links { display: flex; gap: 8px; margin-left: auto; }
+    nav .nav-links a {
+      color: rgba(255,255,255,.87); text-decoration: none; font-size: 14px; font-weight: 500;
+      padding: 6px 12px; border-radius: 4px; transition: background .15s;
+    }
+    nav .nav-links a:hover { background: rgba(255,255,255,.15); }
+    nav .nav-links a.active { background: rgba(255,255,255,.2); color: #fff; }
+
+    .page { display: flex; margin-top: var(--nav-height); min-height: calc(100vh - var(--nav-height)); }
+
+    .sidebar {
+      width: 240px; flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 32px 16px;
+      position: sticky; top: var(--nav-height); height: calc(100vh - var(--nav-height));
+      overflow-y: auto;
+    }
+    .sidebar h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); margin-bottom: 12px; }
+    .toc { list-style: none; }
+    .toc li { margin-bottom: 4px; }
+    .toc a {
+      display: block; padding: 6px 10px; border-radius: 4px;
+      color: var(--text-secondary); text-decoration: none; font-size: 14px;
+      transition: background .12s, color .12s;
+    }
+    .toc a:hover { background: var(--primary-light); color: var(--primary-dark); }
+    .toc a.sub { padding-left: 22px; font-size: 13px; }
+
+    article { flex: 1; max-width: 740px; padding: 48px 40px; }
+
+    h1 { font-size: 32px; font-weight: 300; color: var(--primary-dark); margin-bottom: 8px; }
+    h2 { font-size: 22px; font-weight: 500; color: var(--primary-dark); margin: 48px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--primary-light); }
+    h3 { font-size: 16px; font-weight: 500; margin: 28px 0 8px; }
+    p  { margin-bottom: 16px; font-size: 15px; }
+    ul, ol { margin: 0 0 16px 20px; font-size: 15px; }
+    li { margin-bottom: 6px; }
+
+    code {
+      font-family: 'Roboto Mono', monospace;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      padding: 1px 6px; border-radius: 3px;
+      font-size: 13px;
+    }
+    pre {
+      background: #263238;
+      color: #cfd8dc;
+      border-radius: 6px;
+      padding: 20px 24px;
+      overflow-x: auto;
+      margin: 16px 0 24px;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 13px; line-height: 1.6;
+    }
+    pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+
+    .callout {
+      background: var(--primary-light);
+      border-left: 4px solid var(--primary);
+      border-radius: 0 6px 6px 0;
+      padding: 14px 18px; margin: 20px 0;
+      font-size: 14px; color: var(--primary-dark);
+    }
+    .callout strong { display: block; margin-bottom: 4px; }
+
+    table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 14px; }
+    th { background: var(--primary-light); color: var(--primary-dark); padding: 10px 14px; text-align: left; font-weight: 500; }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+
+    footer {
+      text-align: center; padding: 32px 24px;
+      border-top: 1px solid var(--border);
+      color: var(--text-secondary); font-size: 13px;
+    }
+    footer a { color: var(--primary); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="index.html">⚗️ ChemDCAT-AP Widget</a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="widget-page.html">Try it</a>
+    <a href="howto.html" class="active">How-to</a>
+    <a href="https://github.com/HendrikBorgelt/React_flow_test" target="_blank">GitHub ↗</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="sidebar">
+    <h4>Contents</h4>
+    <ul class="toc">
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#canvas">The Canvas</a></li>
+      <li><a href="#nodes" class="sub">Schema nodes</a></li>
+      <li><a href="#palette" class="sub">Node palette</a></li>
+      <li><a href="#connections" class="sub">Connections</a></li>
+      <li><a href="#measurements">Measurements</a></li>
+      <li><a href="#quant" class="sub">Quantitative</a></li>
+      <li><a href="#qual" class="sub">Qualitative</a></li>
+      <li><a href="#import-export">Import / Export</a></li>
+      <li><a href="#json-format" class="sub">JSON format</a></li>
+      <li><a href="#yaml-format" class="sub">YAML format</a></li>
+      <li><a href="#linkml">Using with LinkML</a></li>
+      <li><a href="#embed">Embedding</a></li>
+    </ul>
+  </nav>
+
+  <article>
+    <h1>How-to Guide</h1>
+    <p style="color:#616161;font-size:14px;">ChemDCAT-AP Widget · interactive metadata editor</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>The ChemDCAT-AP Widget is a browser-based, schema-driven metadata editor. It turns LinkML class definitions from the <strong>dcat-4C-ap</strong> schema into interactive node cards on a canvas. You connect nodes, fill in field values, and export the result as a valid <strong>LinkML instance document</strong> (JSON or YAML).</p>
+    <p>No installation required — it runs entirely in the browser.</p>
+    <div class="callout">
+      <strong>LinkML round-trip</strong>
+      The exported JSON/YAML is compatible with LinkML generators (<code>linkml-convert</code>, <code>gen-jsonld</code>, <code>gen-rdf</code>, etc.). You can also re-import a saved file to continue editing.
+    </div>
+
+    <h2 id="canvas">The Canvas</h2>
+
+    <h3 id="nodes">Schema nodes</h3>
+    <p>Each <strong>node</strong> represents a LinkML class instance. The node header shows the class name (e.g. <em>MaterialSample</em>). Click the header to expand/collapse the field list. Fields are grouped by type:</p>
+    <ul>
+      <li><strong>Primitive fields</strong> — plain text, numbers, booleans</li>
+      <li><strong>Lookup fields</strong> — multiple free-text values (e.g. keywords)</li>
+      <li><strong>Measurement fields</strong> (widget) — structured rows with value, unit, and quantity type</li>
+      <li><strong>Reference fields</strong> — slots that link to other class nodes</li>
+    </ul>
+
+    <h3 id="palette">Node palette</h3>
+    <p>On the left side of the canvas you will find the <strong>node palette</strong>. Drag any class card onto the canvas to create a new node of that type. You can also use the <strong>⌂ Home</strong> button in the toolbar to return to the welcome screen.</p>
+
+    <h3 id="connections">Connecting nodes</h3>
+    <p>Reference slots are shown as <strong>connection handles</strong> (dots) on node edges. Drag from a source handle to a target node to create a relationship. The edge label shows which slot the connection represents (e.g. <code>has_sample</code>).</p>
+
+    <h2 id="measurements">Measurements</h2>
+
+    <h3 id="quant">Quantitative attributes</h3>
+    <p>Quantitative measurement rows contain three inputs:</p>
+    <table>
+      <tr><th>Field</th><th>Description</th><th>Example</th></tr>
+      <tr><td><code>title</code></td><td>Human-readable label for this measurement entry</td><td><em>sample mass</em></td></tr>
+      <tr><td><code>value / unit</code></td><td>Numeric value and unit abbreviation</td><td><em>2.5 mg</em></td></tr>
+      <tr><td><code>has_quantity_type</code></td><td>QUDT quantity kind URI (auto-derived for known classes)</td><td><em>…quantitykind/Mass</em></td></tr>
+    </table>
+    <p>For well-known classes (<code>has_mass</code>, <code>has_temperature</code>, <code>has_volume</code>, <code>has_pressure</code>, etc.) the <code>has_quantity_type</code> URI is <strong>filled in automatically</strong> on export. For generic <code>QuantitativeAttribute</code> slots you can type the URI directly; a grey placeholder shows the expected pattern.</p>
+
+    <p>Supported unit abbreviations and their QUDT expansions:</p>
+    <table>
+      <tr><th>Input</th><th>QUDT URI (abbreviated)</th></tr>
+      <tr><td><code>mg</code></td><td><code>qudt/unit/MilliGM</code></td></tr>
+      <tr><td><code>g</code></td><td><code>qudt/unit/GM</code></td></tr>
+      <tr><td><code>kg</code></td><td><code>qudt/unit/KiloGM</code></td></tr>
+      <tr><td><code>mL</code></td><td><code>qudt/unit/MilliL</code></td></tr>
+      <tr><td><code>L</code></td><td><code>qudt/unit/L</code></td></tr>
+      <tr><td><code>°C</code></td><td><code>qudt/unit/DEG_C</code></td></tr>
+      <tr><td><code>K</code></td><td><code>qudt/unit/K</code></td></tr>
+      <tr><td><code>bar</code></td><td><code>qudt/unit/BAR</code></td></tr>
+      <tr><td><code>Pa</code></td><td><code>qudt/unit/PA</code></td></tr>
+      <tr><td><code>%</code></td><td><code>qudt/unit/PERCENT</code></td></tr>
+    </table>
+
+    <h3 id="qual">Qualitative attributes</h3>
+    <p>Qualitative slots (e.g. <code>has_qualitative_attribute</code>) only have a <strong>title</strong> and a <strong>value</strong> field — no unit or quantity type.</p>
+
+    <h2 id="import-export">Import / Export</h2>
+
+    <h3 id="json-format">JSON export</h3>
+    <p>Click <strong>↓ JSON</strong> in the toolbar. The downloaded file is a <strong>LinkML instance JSON</strong> document using <code>@type</code> for class names and slot names as keys:</p>
+    <pre><code>{
+  "@type": "MaterialSample",
+  "id": "ms-001",
+  "name": "Catalyst powder",
+  "has_mass": [
+    {
+      "@type": "Mass",
+      "value": 2.5,
+      "unit": "https://qudt.org/vocab/unit/MilliGM",
+      "has_quantity_type": "http://qudt.org/vocab/quantitykind/Mass"
+    }
+  ]
+}</code></pre>
+
+    <h3 id="yaml-format">YAML export</h3>
+    <p>Click <strong>↓ YAML</strong> for the same content as YAML — often preferred as input for LinkML CLI tools:</p>
+    <pre><code>"@type": MaterialSample
+id: ms-001
+name: Catalyst powder
+has_mass:
+  - "@type": Mass
+    value: 2.5
+    unit: https://qudt.org/vocab/unit/MilliGM
+    has_quantity_type: http://qudt.org/vocab/quantitykind/Mass</code></pre>
+
+    <h2 id="linkml">Using the export with LinkML</h2>
+    <p>After exporting, use standard LinkML tools to convert or validate the instance document:</p>
+    <pre><code># Convert to JSON-LD
+linkml-convert -s dcat_4c_ap.yaml -t jsonld my-export.yaml
+
+# Validate against the schema
+linkml-validate -s dcat_4c_ap.yaml my-export.yaml
+
+# Generate RDF (Turtle)
+linkml-convert -s dcat_4c_ap.yaml -t ttl my-export.yaml</code></pre>
+    <div class="callout">
+      The schema YAML used by the widget is bundled at <code>src/schema/dcat_4c_ap.schema.json</code>. It is compiled from the LinkML source at <a href="https://github.com/nfdi-de/chem-dcat-ap" target="_blank">nfdi-de/chem-dcat-ap</a>.
+    </div>
+
+    <h2 id="embed">Embedding the widget</h2>
+    <p>The widget is deployed as a static web app and can be embedded in any HTML page via <code>&lt;iframe&gt;</code>:</p>
+    <pre><code>&lt;iframe
+  src="https://hendrikborgelt.github.io/React_flow_test/widget/"
+  width="100%"
+  height="700px"
+  style="border:none; border-radius:8px;"
+  title="ChemDCAT-AP metadata widget"
+&gt;&lt;/iframe&gt;</code></pre>
+
+  </article>
+</div>
+
+<footer>
+  Built with <a href="https://reactflow.dev" target="_blank">React Flow</a> ·
+  Schema: <a href="https://github.com/nfdi-de/chem-dcat-ap" target="_blank">ChemDCAT-AP</a> ·
+  <a href="https://github.com/HendrikBorgelt/React_flow_test" target="_blank">Source on GitHub</a>
+</footer>
+
+</body>
+</html>
