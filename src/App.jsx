@@ -13,7 +13,10 @@ import {
 import '@xyflow/react/dist/style.css';
 import { SchemaNode } from './nodes/SchemaNode';
 import { GhostNode } from './nodes/GhostNode';
+import { SchemaTemplateNode } from './nodes/SchemaTemplateNode';
+import { WaypointEdge } from './edges/WaypointEdge';
 import { NodePalette } from './components/NodePalette';
+import { SchemaSnippetPanel } from './components/SchemaSnippetPanel';
 import { CanvasControls } from './components/CanvasControls';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { SettingsModal, DEFAULT_SETTINGS } from './components/SettingsModal';
@@ -21,8 +24,11 @@ import { ExportWarning } from './components/ExportWarning';
 import { ValidationBar } from './components/ValidationBar';
 import { fromJson } from './loaders/fromJson';
 import { toJson } from './loaders/toJson';
+import { fromSchema, applyDagreLayout } from './loaders/fromSchema';
+import { saveSchemaView, parseSchemaView } from './loaders/viewState';
 import { dump as yamlDump, load as yamlLoad } from 'js-yaml';
 import { getClassInfo, getCompatibleClasses, getNodeDisplayLabel, isSubtypeOf, validateNode } from './schema/schemaUtils';
+import { buildInheritanceMap } from './schema/inheritanceUtils';
 import { ActiveHandleContext } from './shared/ActiveHandleContext';
 import { generateDisplayName } from './utils/nodeNames';
 // ~config resolves to the active schema's config file at build time
@@ -31,7 +37,35 @@ import { config } from '~config';
 
 const { schema } = config;
 
-const nodeTypes = { schemaNode: SchemaNode, ghostNode: GhostNode };
+// Compute inheritance map and class-origin map once at module load
+const { inheritanceMap, classOriginMap } = config.yamlSources
+  ? buildInheritanceMap(config.yamlSources)
+  : { inheritanceMap: new Map(), classOriginMap: new Map() };
+
+// Assign one palette color per unique YAML origin, in encounter order
+const PALETTE = [
+  '#6366f1', '#8b5cf6', '#06b6d4', '#22c55e',
+  '#f97316', '#ec4899', '#eab308', '#ef4444',
+  '#3b82f6', '#14b8a6', '#a78bfa', '#64748b',
+];
+const originColors = new Map();
+let _pi = 0;
+for (const name of new Set(classOriginMap.values())) {
+  originColors.set(name, PALETTE[_pi++ % PALETTE.length]);
+}
+
+const resolveColor = (cls, overrides) =>
+  overrides.get(cls) ?? originColors.get(classOriginMap.get(cls)) ?? '#6366f1';
+
+const nodeTypes = {
+  schemaNode:         SchemaNode,
+  ghostNode:          GhostNode,
+  schemaTemplateNode: SchemaTemplateNode,
+};
+
+const edgeTypes = {
+  schemaEdge: WaypointEdge,
+};
 
 // Pre-filled with data from MaterialSample-001.json for an immediate visual demo
 const initialNodes = [
@@ -64,6 +98,14 @@ const BG_VARIANT_MAP = {
   cross: BackgroundVariant.Cross,
 };
 
+// All non-enum object classes in the schema (for default schema view visibility)
+function getAllSchemaClasses(schemaDoc) {
+  const defs = schemaDoc.$defs ?? {};
+  return new Set(
+    Object.keys(defs).filter(n => defs[n]?.type === 'object' && !Array.isArray(defs[n].enum))
+  );
+}
+
 export default function App() {
   const [welcomeVisible, setWelcomeVisible] = useState(true);
   const [settingsOpen,   setSettingsOpen]   = useState(false);
@@ -72,14 +114,30 @@ export default function App() {
   const [isInteractive,  setIsInteractive]  = useState(true);
   const [minimapOpen,    setMinimapOpen]    = useState(true);
   const [importError,    setImportError]    = useState(null);
+
+  // ── Data mode state ────────────────────────────────────────────────────────
   const [nodes, setNodes] = useState(initialNodes);
   const [edges, setEdges] = useState(initialEdges);
   const [activeHandle, setActiveHandle] = useState(null); // { nodeId, handleId } | null
   const [ghostNodeId,  setGhostNodeId]  = useState(null); // id of the current ghost node
+
+  // ── Schema mode state ──────────────────────────────────────────────────────
+  const [viewMode,             setViewMode]             = useState('data'); // 'data' | 'schema'
+  const [schemaNodes,          setSchemaNodes]          = useState([]);
+  const [schemaEdges,          setSchemaEdges]          = useState([]);
+  const [visibleSchemaClasses, setVisibleSchemaClasses] = useState(() => getAllSchemaClasses(schema));
+  const [showInheritance,      setShowInheritance]      = useState(true);
+  const [showRelations,        setShowRelations]        = useState(true);
+  const [layoutFrozen,         setLayoutFrozen]         = useState(false);
+  const [nodeColorOverrides,   setNodeColorOverrides]   = useState(new Map());
+  const [prevColorOverrides,   setPrevColorOverrides]   = useState(null);
+
+  const isSchema = viewMode === 'schema';
+
   const { screenToFlowPosition, fitView } = useReactFlow();
   const violationCursorRef = useRef(0);
-  const fileInputRef = useRef(null);
-  const originalEdgeRef = useRef(null); // edge displaced by the edge-click ghost flow
+  const fileInputRef       = useRef(null);
+  const originalEdgeRef    = useRef(null);
 
   // ── Welcome / load handlers ────────────────────────────────────────────────
   const handleNew = () => {
@@ -114,7 +172,7 @@ export default function App() {
     document.body.removeChild(a); URL.revokeObjectURL(url);
   };
 
-  // ── Validation helpers ────────────────────────────────────────────────────
+  // ── Validation helpers ─────────────────────────────────────────────────────
   const collectViolations = () =>
     nodes.flatMap(n => {
       const v = validateNode(n.data.className, n.data.values ?? {}, schema);
@@ -122,7 +180,6 @@ export default function App() {
       return [{ nodeId: n.id, className: n.data.className, slotNames: v.map(x => x.slotName) }];
     });
 
-  // Cycle through nodes that have required-field violations, fitting the view
   const handleNextViolation = useCallback(() => {
     const violating = nodes.filter(
       n => validateNode(n.data.className, n.data.values ?? {}, schema).length > 0
@@ -187,7 +244,7 @@ export default function App() {
     reader.readAsText(file);
   };
 
-  // ── Node / edge change handlers ────────────────────────────────────────────
+  // ── Data node / edge change handlers ──────────────────────────────────────
   const onNodesChange = useCallback(
     changes => setNodes(nds => applyNodeChanges(changes, nds)), []
   );
@@ -195,7 +252,15 @@ export default function App() {
     changes => setEdges(eds => applyEdgeChanges(changes, eds)), []
   );
 
-  // ── Add a new node at the current viewport centre ──────────────────────────
+  // ── Schema node / edge change handlers ────────────────────────────────────
+  const onSchemaNodesChange = useCallback(
+    changes => setSchemaNodes(nds => applyNodeChanges(changes, nds)), []
+  );
+  const onSchemaEdgesChange = useCallback(
+    changes => setSchemaEdges(eds => applyEdgeChanges(changes, eds)), []
+  );
+
+  // ── Add a new data node at the current viewport centre ─────────────────────
   const addNode = useCallback((className) => {
     const position = screenToFlowPosition({
       x: window.innerWidth  / 2,
@@ -210,7 +275,166 @@ export default function App() {
     }]);
   }, [screenToFlowPosition]);
 
-  // ── Guided connections — helpers defined early (used by onConnect below) ──
+  // ── Schema mode — switch handlers ──────────────────────────────────────────
+
+  const switchToSchema = useCallback(() => {
+    if (schemaNodes.length === 0) {
+      // First time entering schema mode: build full graph with Dagre layout
+      const allClasses = getAllSchemaClasses(schema);
+      const { nodes: sn, edges: se } = fromSchema(
+        schema, inheritanceMap, allClasses, true, config.abstractClasses ?? []
+      );
+      const colored = sn.map(n => ({ ...n, data: { ...n.data, color: resolveColor(n.id, nodeColorOverrides) } }));
+      setVisibleSchemaClasses(allClasses);
+      setShowInheritance(true);
+      setShowRelations(true);
+      setSchemaNodes(colored);
+      setSchemaEdges(se);
+    }
+    setViewMode('schema');
+    setWelcomeVisible(false);
+    setTimeout(() => fitView({ padding: 0.1, duration: 400 }), 80);
+  }, [schemaNodes.length, fitView, nodeColorOverrides]);
+
+  const switchToData = useCallback(() => {
+    setViewMode('data');
+    setTimeout(() => fitView({ padding: 0.3, duration: 400 }), 80);
+  }, [fitView]);
+
+  // ── Schema mode — color sync ───────────────────────────────────────────────
+  // Whenever manual overrides change, re-stamp color into every schema node's data
+  useEffect(() => {
+    setSchemaNodes(nds =>
+      nds.length === 0 ? nds
+        : nds.map(n => ({ ...n, data: { ...n.data, color: resolveColor(n.id, nodeColorOverrides) } }))
+    );
+  }, [nodeColorOverrides]);
+
+  const handleColorChange = useCallback((cls, color) => {
+    setPrevColorOverrides(nodeColorOverrides);
+    setNodeColorOverrides(prev => {
+      const next = new Map(prev);
+      color === null ? next.delete(cls) : next.set(cls, color);
+      return next;
+    });
+  }, [nodeColorOverrides]);
+
+  const handleRevertColors = useCallback(() => {
+    if (prevColorOverrides !== null) {
+      setNodeColorOverrides(prevColorOverrides);
+      setPrevColorOverrides(null);
+    }
+  }, [prevColorOverrides]);
+
+  const handleResetColors = useCallback(() => {
+    setPrevColorOverrides(nodeColorOverrides);
+    setNodeColorOverrides(new Map());
+  }, [nodeColorOverrides]);
+
+  // ── Schema mode — visibility ───────────────────────────────────────────────
+
+  const handleSchemaVisibilityChange = useCallback((nextVisible) => {
+    setVisibleSchemaClasses(nextVisible);
+    setSchemaNodes(prev => prev.map(n => ({ ...n, hidden: !nextVisible.has(n.id) })));
+    setSchemaEdges(prev => prev.map(e => ({
+      ...e,
+      hidden: !nextVisible.has(e.source) || !nextVisible.has(e.target) ||
+              (e.data?.edgeKind === 'inheritance' && !showInheritance) ||
+              (e.data?.edgeKind === 'relation'    && !showRelations),
+    })));
+  }, [showInheritance, showRelations]);
+
+  const handleEdgeKindToggle = useCallback((kind) => {
+    const nextInh = kind === 'inheritance' ? !showInheritance : showInheritance;
+    const nextRel = kind === 'relation'   ? !showRelations   : showRelations;
+    setShowInheritance(nextInh);
+    setShowRelations(nextRel);
+    setSchemaEdges(prev => prev.map(e => ({
+      ...e,
+      hidden: !visibleSchemaClasses.has(e.source) || !visibleSchemaClasses.has(e.target) ||
+              (e.data?.edgeKind === 'inheritance' && !nextInh) ||
+              (e.data?.edgeKind === 'relation'    && !nextRel),
+    })));
+  }, [showInheritance, showRelations, visibleSchemaClasses]);
+
+  // ── Schema mode — layout ───────────────────────────────────────────────────
+
+  const handleResetLayout = useCallback(() => {
+    if (layoutFrozen) return;
+    const visNodes = schemaNodes.filter(n => !n.hidden);
+    const visEdges = schemaEdges.filter(e => !e.hidden);
+    const relaid   = applyDagreLayout(visNodes, visEdges);
+    const posMap   = new Map(relaid.map(n => [n.id, n.position]));
+    setSchemaNodes(prev => prev.map(n => posMap.has(n.id) ? { ...n, position: posMap.get(n.id) } : n));
+    setTimeout(() => fitView({ padding: 0.1, duration: 400 }), 80);
+  }, [layoutFrozen, schemaNodes, schemaEdges, fitView]);
+
+  // ── Schema mode — view save / load ─────────────────────────────────────────
+
+  const handleSaveView = useCallback(() => {
+    saveSchemaView(
+      schemaNodes,
+      schemaEdges,
+      visibleSchemaClasses,
+      config.schemaId ?? 'schema',
+      layoutFrozen,
+      showInheritance,
+      showRelations,
+      nodeColorOverrides,
+    );
+  }, [schemaNodes, schemaEdges, visibleSchemaClasses, layoutFrozen, showInheritance, showRelations, nodeColorOverrides]);
+
+  const handleLoadView = useCallback((viewJson) => {
+    try {
+      const {
+        positionMap, hiddenEdgeIds, visibleClasses,
+        frozenLayout, showInheritance: si, showRelations: sr,
+        colorOverrides: savedColors,
+      } = parseSchemaView(viewJson);
+
+      const loadedOverrides = savedColors ?? nodeColorOverrides;
+
+      // Build a fresh full schema graph (no layout) and apply saved positions / visibility
+      const { nodes: allSN, edges: allSE } = fromSchema(
+        schema, inheritanceMap, null, false, config.abstractClasses ?? []
+      );
+
+      const newSN = allSN.map(n => ({
+        ...n,
+        position: positionMap.get(n.id) ?? n.position,
+        hidden:   !visibleClasses.has(n.id),
+        data: { ...n.data, color: resolveColor(n.id, loadedOverrides) },
+      }));
+
+      const waypointMap = new Map((viewJson.edgeWaypoints ?? []).map(e => [e.id, e.waypoints]));
+
+      const newSE = allSE.map(e => ({
+        ...e,
+        hidden: !visibleClasses.has(e.source) || !visibleClasses.has(e.target) ||
+                hiddenEdgeIds.has(e.id) ||
+                (e.data?.edgeKind === 'inheritance' && !si) ||
+                (e.data?.edgeKind === 'relation'    && !sr),
+        data: waypointMap.has(e.id)
+          ? { ...e.data, waypoints: waypointMap.get(e.id) }
+          : e.data,
+      }));
+
+      setVisibleSchemaClasses(visibleClasses);
+      setLayoutFrozen(frozenLayout);
+      setShowInheritance(si);
+      setShowRelations(sr);
+      setSchemaNodes(newSN);
+      setSchemaEdges(newSE);
+      if (savedColors) setNodeColorOverrides(savedColors);
+      setViewMode('schema');
+      setWelcomeVisible(false);
+      setTimeout(() => fitView({ padding: 0.1, duration: 400 }), 80);
+    } catch (err) {
+      alert(`Failed to load view: ${err.message}`);
+    }
+  }, [fitView, nodeColorOverrides]);
+
+  // ── Guided connections — helpers defined early (used by onConnect below) ───
 
   // Shared props for every real (non-ghost) edge
   const realEdgeProps = useCallback((sourceHandle) => ({
@@ -224,9 +448,6 @@ export default function App() {
     labelBgBorderRadius: 3,
   }), [settings.edgeType]);
 
-  // Remove the ghost node/edges and reset guided-connection state.
-  // restoreOriginal=true  (default) → cancelled by user; restore displaced original edge.
-  // restoreOriginal=false           → user confirmed a new connection; discard original.
   const dismissGhost = useCallback((restoreOriginal = true) => {
     const orig = originalEdgeRef.current;
     originalEdgeRef.current = null;
@@ -239,8 +460,7 @@ export default function App() {
     setActiveHandle(null);
   }, []);
 
-  // ── Create edge with slot name as label ───────────────────────────────────
-  // When source is a ghost node, reroute the connection to the real source node.
+  // ── Create edge with slot name as label ────────────────────────────────────
   const onConnect = useCallback((params) => {
     const srcNode = nodes.find(n => n.id === params.source);
     if (srcNode?.type === 'ghostNode') {
@@ -261,7 +481,6 @@ export default function App() {
   }, [nodes, realEdgeProps, dismissGhost]);
 
   // ── Only allow connections where the target class is in the slot's targetClasses ──
-  // Ghost node as source: validate against the real source node's slot.
   const isValidConnection = useCallback((connection) => {
     const { source, sourceHandle, target } = connection;
     if (source === target) return false;
@@ -282,24 +501,19 @@ export default function App() {
     return slot?.targetClasses.some(tc => isSubtypeOf(tgtNode.data.className, tc, schema)) ?? false;
   }, [nodes]);
 
-  // ── Guided connections ────────────────────────────────────────────────────
+  // ── Guided connections ─────────────────────────────────────────────────────
 
-  // Dismiss on Escape
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') dismissGhost(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [dismissGhost]);
 
-  // Called by SchemaNode when a connection-row label is clicked.
-  // Creates a ghost node + ghost edge instead of showing the menu directly.
   const handleHandleClick = useCallback((nodeId, handleId) => {
-    // Toggle off if the same slot is clicked again
     if (activeHandle?.nodeId === nodeId && activeHandle?.handleId === handleId) {
       dismissGhost();
       return;
     }
-    // Clear existing ghost, restoring any displaced original edge
     const prevOrig = originalEdgeRef.current;
     originalEdgeRef.current = null;
     setNodes(nds => nds.filter(n => n.type !== 'ghostNode'));
@@ -339,8 +553,6 @@ export default function App() {
     }]);
   }, [activeHandle, nodes, dismissGhost]);
 
-  // Pre-compute which canvas nodes are valid targets + which classes can be created.
-  // Ghost nodes are excluded from both lists.
   const compatibleInfo = useMemo(() => {
     if (!activeHandle) return { compatibleNodeIds: new Set(), compatibleClasses: [], compatibleNodes: [] };
     const srcNode = nodes.find(n => n.id === activeHandle.nodeId);
@@ -358,7 +570,6 @@ export default function App() {
     };
   }, [activeHandle, nodes]);
 
-  // Create a new node of the chosen class and wire a real edge from the active slot.
   const handleCreateAndConnect = useCallback((className) => {
     if (!activeHandle) return;
     const { nodeId, handleId } = activeHandle;
@@ -379,7 +590,6 @@ export default function App() {
     dismissGhost(false);
   }, [activeHandle, nodes, realEdgeProps, dismissGhost]);
 
-  // Connect the active slot to an already-existing canvas node.
   const handleConnectExisting = useCallback((targetNodeId) => {
     if (!activeHandle) return;
     const { nodeId, handleId } = activeHandle;
@@ -391,7 +601,6 @@ export default function App() {
     dismissGhost(false);
   }, [activeHandle, realEdgeProps, dismissGhost]);
 
-  // Context value passed to all SchemaNodes and the GhostNode
   const activeHandleCtxValue = useMemo(() => ({
     activeHandle,
     compatibleNodeIds:  compatibleInfo.compatibleNodeIds,
@@ -403,15 +612,10 @@ export default function App() {
     onConnectExisting:  handleConnectExisting,
   }), [activeHandle, compatibleInfo, handleHandleClick, dismissGhost, handleCreateAndConnect, handleConnectExisting]);
 
-  // Phase-1 reconnect: drag existing edge endpoint to a new target node
   const onReconnect = useCallback((oldEdge, newConnection) => {
     setEdges(eds => reconnectEdge(oldEdge, newConnection, eds));
   }, []);
 
-  // Clicking an existing edge opens the ghost class-box positioned between source and target.
-  // The original edge is removed and replaced by two ghost edges (src→ghost, ghost→tgt)
-  // so the connection visually "passes through" the ghost node.
-  // Cancelling (Escape / X / pane) restores the original edge; confirming discards it.
   const onEdgeClick = useCallback((event, edge) => {
     if (edge.data?.isGhost) return;
     const srcNode = nodes.find(n => n.id === edge.source);
@@ -420,11 +624,9 @@ export default function App() {
 
     const slotName = edge.sourceHandle ?? String(edge.label ?? '');
 
-    // Replace any previously stored original edge with the new one
     const prevOrig = originalEdgeRef.current;
     originalEdgeRef.current = edge;
 
-    // Position ghost between source and target, just before the target node
     const ghostX = srcNode
       ? Math.max(srcNode.position.x + 340, tgtNode.position.x - 380)
       : tgtNode.position.x - 380;
@@ -448,12 +650,10 @@ export default function App() {
     ]);
 
     setEdges(eds => {
-      // Remove ghost edges + restore any previous displaced edge + remove the clicked edge
-      const base = eds.filter(e => !e.data?.isGhost && e.id !== edge.id);
+      const base     = eds.filter(e => !e.data?.isGhost && e.id !== edge.id);
       const withPrev = prevOrig ? [...base, prevOrig] : base;
       return [
         ...withPrev,
-        // Source → Ghost (upstream dashed)
         {
           id:           `ghost-edge-in-${gId}`,
           source:       edge.source,
@@ -466,7 +666,6 @@ export default function App() {
           deletable:    false,
           data:         { isGhost: true },
         },
-        // Ghost → Target (downstream dashed — shows the existing connection routing through)
         {
           id:           `ghost-edge-out-${gId}`,
           source:       gId,
@@ -483,7 +682,7 @@ export default function App() {
     });
   }, [nodes]);
 
-  // ── Settings change — also update existing edges when edgeType changes ─────
+  // ── Settings change ────────────────────────────────────────────────────────
   const handleSettingsChange = (next) => {
     setSettings(next);
     if (next.edgeType !== settings.edgeType) {
@@ -496,48 +695,73 @@ export default function App() {
 
       {welcomeVisible && <WelcomeScreen config={config} onNew={handleNew} onLoad={handleLoad} />}
 
-      {/* ── Left sidebar (toolbar + class palette) ── */}
-      <NodePalette
-        onAddNode={addNode}
-        onHome={() => setWelcomeVisible(true)}
-        onSaveJson={handleSaveJson}
-        onSaveYaml={handleSaveYaml}
-        onSettings={() => setSettingsOpen(true)}
-        fileInputRef={fileInputRef}
-        onFileChange={handleFileChange}
-        importError={importError}
-        onDismissError={() => setImportError(null)}
-      />
+      {/* ── Left sidebar: Schema panel in schema mode, Node palette in data mode ── */}
+      {isSchema ? (
+        <SchemaSnippetPanel
+          schema={schema}
+          visibleClasses={visibleSchemaClasses}
+          onVisibilityChange={handleSchemaVisibilityChange}
+          showInheritance={showInheritance}
+          showRelations={showRelations}
+          onEdgeKindToggle={handleEdgeKindToggle}
+          layoutFrozen={layoutFrozen}
+          onResetLayout={handleResetLayout}
+          onToggleFreeze={() => setLayoutFrozen(v => !v)}
+          onSaveView={handleSaveView}
+          onLoadView={handleLoadView}
+          onModeSwitch={switchToData}
+          classOriginMap={classOriginMap}
+          originColors={originColors}
+          nodeColorOverrides={nodeColorOverrides}
+          onColorChange={handleColorChange}
+          onRevertColors={handleRevertColors}
+          onResetColors={handleResetColors}
+          prevColorOverrides={prevColorOverrides}
+        />
+      ) : (
+        <NodePalette
+          onAddNode={addNode}
+          onHome={() => setWelcomeVisible(true)}
+          onSaveJson={handleSaveJson}
+          onSaveYaml={handleSaveYaml}
+          onSettings={() => setSettingsOpen(true)}
+          onSchemaMode={switchToSchema}
+          fileInputRef={fileInputRef}
+          onFileChange={handleFileChange}
+          importError={importError}
+          onDismissError={() => setImportError(null)}
+        />
+      )}
 
-      {/* ── Canvas ─────────────────────────────────── */}
+      {/* ── Canvas ─────────────────────────────────────────────────────────── */}
       <ActiveHandleContext.Provider value={activeHandleCtxValue}>
       <div style={{ flex: 1, position: 'relative' }}>
         <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          isValidConnection={isValidConnection}
+          nodes={isSchema ? schemaNodes : nodes}
+          edges={isSchema ? schemaEdges : edges}
+          onNodesChange={isSchema ? onSchemaNodesChange : onNodesChange}
+          onEdgesChange={isSchema ? onSchemaEdgesChange : onEdgesChange}
+          onConnect={isSchema ? undefined : onConnect}
+          isValidConnection={isSchema ? undefined : isValidConnection}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           nodesDraggable={isInteractive}
-          nodesConnectable={isInteractive}
+          nodesConnectable={isSchema ? false : isInteractive}
           elementsSelectable={isInteractive}
           minZoom={settings.minZoom}
           maxZoom={settings.maxZoom}
           snapToGrid={settings.snapToGrid}
           snapGrid={settings.snapGrid}
-          defaultEdgeOptions={{ type: settings.edgeType, animated: true }}
-          onEdgeClick={onEdgeClick}
-          onPaneClick={dismissGhost}
+          defaultEdgeOptions={isSchema ? undefined : { type: settings.edgeType, animated: true }}
+          onEdgeClick={isSchema ? undefined : onEdgeClick}
+          onPaneClick={isSchema ? undefined : dismissGhost}
           reconnectRadius={12}
-          onReconnect={onReconnect}
+          onReconnect={isSchema ? undefined : onReconnect}
           fitView
           fitViewOptions={{ padding: 0.3 }}
         >
           <Background variant={BG_VARIANT_MAP[settings.bgVariant] ?? BackgroundVariant.Dots} />
 
-          {/* Custom zoom / lock / minimap controls */}
           <CanvasControls
             isInteractive={isInteractive}
             onToggleInteractive={() => setIsInteractive(v => !v)}
@@ -545,10 +769,9 @@ export default function App() {
             onToggleMinimap={() => setMinimapOpen(v => !v)}
           />
 
-          {/* Collapsible minimap — dark theme so nodes are visible */}
           {minimapOpen && (
             <MiniMap
-              nodeColor="#3b82f6"
+              nodeColor={isSchema ? '#6366f1' : '#3b82f6'}
               maskColor="rgba(15,23,42,0.55)"
               style={{
                 background:   '#1e293b',
@@ -560,13 +783,12 @@ export default function App() {
 
         </ReactFlow>
 
-        {/* Validation bar — outside ReactFlow to avoid overflow:hidden clipping */}
-        <ValidationBar nodes={nodes} onNext={handleNextViolation} />
+        {!isSchema && <ValidationBar nodes={nodes} onNext={handleNextViolation} />}
 
       </div>
       </ActiveHandleContext.Provider>
 
-      {/* ── Settings modal ─────────────────────────── */}
+      {/* ── Settings modal ─────────────────────────────────────────────────── */}
       {settingsOpen && (
         <SettingsModal
           settings={settings}
@@ -575,7 +797,7 @@ export default function App() {
         />
       )}
 
-      {/* ── Export warning modal ───────────────────── */}
+      {/* ── Export warning modal ────────────────────────────────────────────── */}
       {exportWarning && (
         <ExportWarning
           violations={exportWarning.violations}

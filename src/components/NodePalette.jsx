@@ -10,6 +10,7 @@ const TOOLBAR = [
   { id: 'json',     icon: '{}', label: 'JSON',     title: 'Export as LinkML JSON'  },
   { id: 'yaml',     icon: '≡',  label: 'YAML',     title: 'Export as LinkML YAML'  },
   { id: 'settings', icon: '⚙',  label: 'Settings', title: 'Editor settings'        },
+  { id: 'schema',   icon: '◈',  label: 'Schema',   title: 'Switch to Schema View'  },
 ];
 
 // Build the full ordered sections list once at module level (stable reference).
@@ -28,6 +29,7 @@ export function NodePalette({
   onSaveJson,
   onSaveYaml,
   onSettings,
+  onSchemaMode,
   fileInputRef,
   onFileChange,
   importError,
@@ -74,6 +76,7 @@ export function NodePalette({
     json:     onSaveJson,
     yaml:     onSaveYaml,
     settings: onSettings,
+    schema:   onSchemaMode,
   };
 
   const fileInput = (

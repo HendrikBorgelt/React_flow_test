@@ -15,6 +15,19 @@ import rxnJson  from '../examples/coremeta4cat/Reaction-001.json';
 import synthJson from '../examples/coremeta4cat/Synthesis-001.json';
 import dsJson   from '../examples/coremeta4cat/CatalysisDataset-001.json';
 
+// Raw YAML sources for schema template viewer (inheritance map extraction)
+import yaml_main          from '../../schemas/coremeta4cat/schema/coremeta4cat.yaml?raw';
+import yaml_common        from '../../schemas/coremeta4cat/schema/coremeta4cat_common.yaml?raw';
+import yaml_synthesis     from '../../schemas/coremeta4cat/schema/coremeta4cat_synthesis_ap.yaml?raw';
+import yaml_char          from '../../schemas/coremeta4cat/schema/coremeta4cat_characterization_ap.yaml?raw';
+import yaml_reaction      from '../../schemas/coremeta4cat/schema/coremeta4cat_reaction_ap.yaml?raw';
+import yaml_simulation    from '../../schemas/coremeta4cat/schema/coremeta4cat_simulation_ap.yaml?raw';
+import yaml_chem_dcat_ap  from '../../schemas/coremeta4cat/schema/chem_dcat_ap.yaml?raw';
+import yaml_material      from '../../schemas/coremeta4cat/schema/material_entities_ap.yaml?raw';
+import yaml_chemical      from '../../schemas/coremeta4cat/schema/chemical_entities_ap.yaml?raw';
+import yaml_chem_rxn      from '../../schemas/coremeta4cat/schema/chemical_reaction_ap.yaml?raw';
+import yaml_dcat4c        from '../../schemas/coremeta4cat/schema/dcat_4c_ap.yaml?raw';
+
 // ── Abstract / infrastructure classes to hide from the node palette ──────────
 // gen-json-schema does NOT emit `abstract: true`, so we list them explicitly.
 // DCAT-AP+ base hierarchy (shared infrastructure, never directly instantiated):
@@ -59,7 +72,9 @@ export const config = {
   appTitle:    'Schema Graph Editor',
   appSubtitle: 'CoreMeta4Cat visual instance editor',
   githubUrl:   'https://github.com/nfdi4cat/CoreMeta4Cat',
+  schemaId:    'coremeta4cat',
   schema,
+  yamlSources: [yaml_main, yaml_common, yaml_synthesis, yaml_char, yaml_reaction, yaml_simulation, yaml_chem_dcat_ap, yaml_material, yaml_chemical, yaml_chem_rxn, yaml_dcat4c],
   abstractClasses: [...DCAT_AP_BASE, ...DCAT_ADMIN, ...COREMETA_ABSTRACT, ...DCAT_DATA_CLASSES],
   examples: [
     {

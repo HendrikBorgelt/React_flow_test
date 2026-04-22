@@ -9,6 +9,12 @@ import msJson  from '../examples/chemdcat/MaterialSample-001.json';
 import ssJson  from '../examples/chemdcat/SubstanceSample-001.json';
 import crJson  from '../examples/chemdcat/ChemicalReaction-001.json';
 
+// Raw YAML sources for schema template viewer (inheritance map extraction)
+import yaml_chem_dcat_ap     from '../../schemas/chem_dcat_ap/schema/chem_dcat_ap.yaml?raw';
+import yaml_material         from '../../schemas/chem_dcat_ap/schema/material_entities_ap.yaml?raw';
+import yaml_chemical         from '../../schemas/chem_dcat_ap/schema/chemical_entities_ap.yaml?raw';
+import yaml_reaction         from '../../schemas/chem_dcat_ap/schema/chemical_reaction_ap.yaml?raw';
+
 // ── Abstract / infrastructure classes to hide from the node palette ──────────
 // gen-json-schema does NOT emit `abstract: true`, so we list them explicitly.
 // DCAT-AP+ base hierarchy (shared infrastructure, never directly instantiated):
@@ -118,7 +124,9 @@ export const config = {
   appTitle:    'Schema Graph Editor',
   appSubtitle: 'chem-dcat-ap visual instance editor',
   githubUrl:   'https://github.com/nfdi4cat/chem-dcat-ap',
+  schemaId:    'chem-dcat-ap',
   schema,
+  yamlSources: [yaml_chem_dcat_ap, yaml_material, yaml_chemical, yaml_reaction],
   abstractClasses: [...DCAT_AP_BASE, ...DCAT_ADMIN, ...CHEMDCAT_ABSTRACT, ...DCAT_DATA_CLASSES],
   paletteSections: PALETTE_SECTIONS,
   examples: [
